@@ -35,7 +35,7 @@
 
         /* 切換開關列 */
         .toggle-row { display: flex; gap: 6px; margin-bottom: 10px; }
-        .btn-toggle { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 6px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; text-align: center; transition: 0.2s; }
+        .btn-toggle { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 6px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; text-align: center; transition: 0.2s; }
         .btn-toggle.active { background: #0284c7; color: #ffffff; border-color: #0284c7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2); }
 
         /* 警示盒 */
@@ -50,12 +50,10 @@
         /* 專屬 OI 籌碼區外框 */
         .oi-card { border-color: #bae6fd; background: linear-gradient(to bottom, #ffffff, #f0f9ff); }
         
-        /* 視覺化跑道完美防護（數字與進度條完全分開） */
-        .track-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 6px; padding: 0 4px; }
-        .track-container { position: relative; background: #e2e8f0; border-radius: 8px; height: 32px; display: flex; align-items: center; padding: 0 8px; margin-bottom: 8px; border: 1px solid #cbd5e1; }
-        .track-bg { position: absolute; left: 8px; right: 8px; height: 6px; background: #cbd5e1; border-radius: 3px; overflow: hidden; }
-        .track-progress { height: 100%; background: #d97706; width: 50%; transition: width 0.3s ease; }
-        .track-pointer { position: absolute; transform: translateX(-50%); background: #0f172a; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; top: 6px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.2); z-index: 5; }
+        /* 視覺化跑道（完美解決覆蓋，拿掉浮動現價標籤） */
+        .track-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px; padding: 0 4px; }
+        .track-container { position: relative; background: #e2e8f0; border-radius: 8px; height: 16px; display: flex; align-items: center; padding: 0 4px; margin-bottom: 8px; border: 1px solid #cbd5e1; overflow: hidden; }
+        .track-progress { height: 100%; background: #d97706; width: 50%; transition: width 0.3s ease; border-radius: 6px; }
 
         /* 資訊檢視欄 */
         .info-bar { display: flex; justify-content: space-between; font-size: 11px; color: #475569; background: rgba(255,255,255,0.7); padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
@@ -131,7 +129,7 @@
         </div>
 
 
-        <!-- ✨ 選擇權 OI 籌碼邊界監控 -->
+        <!-- ✨ 選擇權 OI 籌碼邊界監控 (取消現價標籤覆蓋，保證數字清爽) -->
         <div class="card oi-card">
             <div class="card-title" style="color: #0369a1; border-color: #bae6fd;">
                 <span>🎯 選擇權 OI 籌碼邊界監控</span>
@@ -153,16 +151,13 @@
                 </div>
             </div>
 
-            <!-- 視覺化跑道（完美獨立 Header，絕不覆蓋數字） -->
+            <!-- 視覺化跑道（獨立 Header，絕不重疊） -->
             <div class="track-header">
                 <span style="color: #059669;">支撐: <span id="disp-floor">39500</span></span>
                 <span style="color: #dc2626;">壓力: <span id="disp-ceiling">41500</span></span>
             </div>
             <div class="track-container">
-                <div class="track-bg">
-                    <div id="oi-bar" class="track-progress"></div>
-                </div>
-                <div id="oi-pointer" class="pointer" style="left: 50%;">現價:40173</div>
+                <div id="oi-bar" class="track-progress"></div>
             </div>
 
             <div class="info-bar">
@@ -184,10 +179,16 @@
                 <span class="sub">先算好最多賠多少</span>
             </div>
 
-            <!-- 模式切換 (模式 A / 模式 B) -->
+            <!-- 多空方向切換 -->
+            <div class="toggle-row" style="margin-bottom: 8px;">
+                <button id="dir-short" onclick="setDirection('short')" class="btn-toggle active">📉 偏空操作 (目標在下方)</button>
+                <button id="dir-long" onclick="setDirection('long')" class="btn-toggle">📈 搶彈多單 (目標在上方)</button>
+            </div>
+
+            <!-- 模式選擇 (模式 A / 模式 B 選擇權價差) -->
             <div class="toggle-row" style="margin-bottom: 12px;">
-                <button id="mode-micro-v2" onclick="setNewMode('micro')" class="btn-toggle active">模式 A：微台期貨</button>
-                <button id="mode-spread-v2" onclick="setNewMode('spread')" class="btn-toggle">模式 B：選擇權價差</button>
+                <button id="mode-micro" onclick="setMode('micro')" class="btn-toggle active">模式 A：微台期貨</button>
+                <button id="mode-spread" onclick="setMode('spread')" class="btn-toggle">模式 B：選擇權價差</button>
             </div>
 
             <div class="grid-2">
@@ -214,7 +215,7 @@
 
             <div class="risk-grid">
                 <div class="risk-box risk-loss">
-                    <div style="font-size: 10px; color: #e11d48; font-weight: 600;">預估最大虧損</div>
+                    <div style="font-size: 10px; color: #e11d48; font-weight: 600;" id="loss-title">預估最大虧損</div>
                     <div id="max-loss" style="font-size: 16px; font-weight: 900; color: #be123c; margin-top: 2px;">$400</div>
                 </div>
                 <div class="risk-box risk-profit">
@@ -234,7 +235,8 @@
     <script>
         let currentDailyTrend = 'down';
         let current5mTrend = 'down';
-        let currentModeV2 = 'micro'; // 'micro' 或 'spread'
+        let currentMode = 'micro'; // 'micro' 或 'spread'
+        let currentDirection = 'short'; // 'short' 或 'long'
 
         function setDailyTrend(trend) {
             currentDailyTrend = trend;
@@ -275,31 +277,45 @@
             }
         }
 
-        function setNewMode(mode) {
-            currentModeV2 = mode;
-            document.getElementById('mode-micro-v2').className = mode === 'micro' ? 'btn-toggle active' : 'btn-toggle';
-            document.getElementById('mode-spread-v2').className = mode === 'spread' ? 'btn-toggle active' : 'btn-toggle';
+        function setDirection(dir) {
+            currentDirection = dir;
+            document.getElementById('dir-short').className = dir === 'short' ? 'btn-toggle active' : 'btn-toggle';
+            document.getElementById('dir-long').className = dir === 'long' ? 'btn-toggle active' : 'btn-toggle';
+            
+            const vwap = parseFloat(document.getElementById('vwap-price').value) || 40028;
+            if (dir === 'short') {
+                document.getElementById('entry-price').value = vwap;
+                document.getElementById('stop-price').value = vwap + 40;
+                document.getElementById('target-price').value = vwap - 428;
+            } else {
+                document.getElementById('entry-price').value = vwap;
+                document.getElementById('stop-price').value = vwap - 40;
+                document.getElementById('target-price').value = vwap + 428;
+            }
+            calculateRisk();
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('mode-micro').className = mode === 'micro' ? 'btn-toggle active' : 'btn-toggle';
+            document.getElementById('mode-spread').className = mode === 'spread' ? 'btn-toggle active' : 'btn-toggle';
             calculateRisk();
         }
 
         function adjustPrice(val) {
             const input = document.getElementById('market-price');
             input.value = parseFloat(input.value) + val;
-            calculateAll();
+            calculateOi();
         }
 
         function adjustVwap(val) {
             const input = document.getElementById('vwap-price');
             input.value = parseFloat(input.value) + val;
-            calculateAll();
+            setDirection(currentDirection);
         }
 
         function syncVwap() {
-            const vwap = parseFloat(document.getElementById('vwap-price').value) || 40028;
-            document.getElementById('entry-price').value = vwap;
-            document.getElementById('stop-price').value = vwap + 40;
-            document.getElementById('target-price').value = vwap - 428;
-            calculateRisk();
+            setDirection(currentDirection);
         }
 
         function calculateAll() {
@@ -322,11 +338,10 @@
 
             const span = ceiling - floor;
             let pct = span === 0 ? 50 : ((market - floor) / span) * 100;
-            pct = Math.max(5, Math.min(95, pct));
+            pct = Math.max(2, Math.min(98, pct));
 
+            // 只更新進度條長度，完全拿掉會覆蓋文字的浮動現價標籤
             document.getElementById('oi-bar').style.width = pct + '%';
-            document.getElementById('oi-pointer').style.left = pct + '%';
-            document.getElementById('oi-pointer').innerText = `現價:${market}`;
 
             const textEl = document.getElementById('oi-bias-text');
             if (pc < 0.7) {
@@ -347,12 +362,18 @@
             const riskPoints = Math.abs(entry - stop);
             const rewardPoints = Math.abs(entry - target);
 
-            let loss = riskPoints * 10 * qty;
-            let profit = rewardPoints * 10 * qty;
+            let loss, profit;
 
-            if (currentModeV2 === 'spread') {
-                loss = riskPoints * 5 * qty; 
+            if (currentMode === 'micro') {
+                // 模式 A：微台期貨 (1點 = 10元)
+                loss = riskPoints * 10 * qty;
+                profit = rewardPoints * 10 * qty;
+                document.getElementById('loss-title').innerText = "預估最大虧損 (微台)";
+            } else {
+                // 模式 B：選擇權價差 (假設合約口數點數價值減半或採價差結構，1點 = 5元且風險鎖死)
+                loss = riskPoints * 5 * qty;
                 profit = rewardPoints * 5 * qty;
+                document.getElementById('loss-title').innerText = "預估最大虧損 (選擇權價差)";
             }
 
             document.getElementById('max-loss').innerText = '$' + loss.toLocaleString();
