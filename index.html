@@ -52,13 +52,12 @@
         /* 專屬 OI 籌碼區外框 */
         .oi-card { border-color: #bae6fd; background: linear-gradient(to bottom, #ffffff, #f0f9ff); }
         
-        /* 視覺化軌道條 */
-        .track-container { position: relative; background: #e2e8f0; border-radius: 8px; height: 30px; display: flex; align-items: center; padding: 0 10px; margin: 10px 0; border: 1px solid #cbd5e1; }
-        .track-bg { position: absolute; left: 12px; right: 12px; height: 6px; background: #cbd5e1; border-radius: 3px; overflow: hidden; }
+        /* 視覺化跑道改善（數字移到上方，避免覆蓋） */
+        .track-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 4px; padding: 0 2px; }
+        .track-container { position: relative; background: #e2e8f0; border-radius: 8px; height: 26px; display: flex; align-items: center; padding: 0 8px; margin-bottom: 8px; border: 1px solid #cbd5e1; }
+        .track-bg { position: absolute; left: 8px; right: 8px; height: 6px; background: #cbd5e1; border-radius: 3px; overflow: hidden; }
         .track-progress { height: 100%; background: #d97706; width: 50%; transition: width 0.3s ease; }
-        .track-pointer { position: absolute; transform: translateX(-50%); background: #0f172a; color: #ffffff; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; top: 4px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-        .track-label-l { position: absolute; left: 10px; font-size: 10px; font-weight: 700; color: #059669; z-index: 2; }
-        .track-label-r { position: absolute; right: 10px; font-size: 10px; font-weight: 700; color: #dc2626; z-index: 2; }
+        .track-pointer { position: absolute; transform: translateX(-50%); background: #0f172a; color: #ffffff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; top: 3px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.2); z-index: 5; }
 
         /* 資訊檢視欄 */
         .info-bar { display: flex; justify-content: space-between; font-size: 11px; color: #475569; background: rgba(255,255,255,0.7); padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
@@ -156,13 +155,15 @@
                 </div>
             </div>
 
-            <!-- 視覺化跑道 -->
+            <!-- 視覺化跑道（數字移至上方，徹底解決覆蓋問題） -->
+            <div class="track-header">
+                <span style="color: #059669;">支撐: <span id="disp-floor">39500</span></span>
+                <span style="color: #dc2626;">壓力: <span id="disp-ceiling">41500</span></span>
+            </div>
             <div class="track-container">
-                <span class="track-label-l" id="disp-floor">39500</span>
                 <div class="track-bg">
                     <div id="oi-bar" class="track-progress"></div>
                 </div>
-                <span class="track-label-r" id="disp-ceiling">41500</span>
                 <div id="oi-pointer" class="pointer" style="left: 50%;">現價:40173</div>
             </div>
 
@@ -322,7 +323,7 @@
 
             const span = ceiling - floor;
             let pct = span === 0 ? 50 : ((market - floor) / span) * 100;
-            pct = Math.max(8, Math.min(92, pct));
+            pct = Math.max(5, Math.min(95, pct));
 
             document.getElementById('oi-bar').style.width = pct + '%';
             document.getElementById('oi-pointer').style.left = pct + '%';
