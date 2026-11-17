@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>均價線偏多決策雷達 & 風報比計算機</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Google Fonts: Inter 與 Noto Sans TC -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 載入 Phosphor Icons 專業圖示庫 -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+                    },
+                    colors: {
+                        terminal: {
+                            bg: '#0b0e14',
+                            card: '#131722',
+                            border: '#2a2e39',
+                            input: '#1e222d',
+                            text: '#d1d4dc',
+                            muted: '#787b86',
+                            up: '#ef5350',    // 台股紅漲
+                            down: '#26a69a',  // 台股綠跌
+                            accent: '#2962ff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0e14;
+            color: #d1d4dc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 隱藏數字輸入框預設上下箭頭，保持版面乾淨 */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* 自訂平滑過渡效果 */
+        .card-glow-green { box-shadow: 0 0 20px rgba(38, 166, 154, 0.15); border-color: rgba(38, 166, 154, 0.5); }
+        .card-glow-yellow { box-shadow: 0 0 20px rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.5); }
+        .card-glow-red { box-shadow: 0 0 20px rgba(239, 83, 80, 0.15); border-color: rgba(239, 83, 80, 0.5); }
+    </style>
+</head>
+<body class="min-h-screen pb-12 selection:bg-blue-600 selection:text-white">
+
+    <!-- 頂部導覽列 -->
+    <header class="sticky top-0 z-30 bg-[#131722]/90 backdrop-blur-md border-b border-[#2a2e39] px-4 py-3">
+        <div class="max-w-5xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-blue-900/30">
+                    <i class="ph-bold ph-radar text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">均價線偏多決策雷達 & 風報比計算機</h1>
+                    <p class="text-xs text-[#787b86]">AVON 專屬台指期 / 選擇權順勢濾網與風控安全鎖</p>
+                </div>
+            </div>
+            <button onclick="resetDefaults()" class="text-xs px-3 py-2 rounded-lg bg-[#1e222d] hover:bg-[#2a2e39] text-[#d1d4dc] border border-[#2a2e39] transition flex items-center gap-1.5" title="重設為預設範例數值">
+                <i class="ph ph-arrow-counter-clockwise"></i>
+                <span class="hidden sm:inline">重設範例</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="max-w-5xl mx-auto px-4 pt-5 space-y-6">
+
+        <!-- 區塊一：均價線偏多進場過濾器 -->
+        <section class="bg-[#131722] rounded-2xl border border-[#2a2e39] p-4 sm:p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#2a2e39]">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
+                    <h2 class="text-base sm:text-lg font-bold text-white">第一關：均價線 (VWAP) 偏多進場雷達</h2>
+                </div>
+                <span class="text-xs px-2.5 py-1 rounded-md bg-[#1e222d] text-[#787b86] border border-[#2a2e39]">只做看得懂的多方主場</span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- 左側輸入條件 (7欄) -->
+                <div class="lg:col-span-7 space-y-5">
+                    <!-- 數字輸入區：現價與均價線 -->
+                    <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                        <div class="bg-[#1e222d] p-3.5 rounded-xl border border-[#2a2e39] focus-within:border-blue-500 transition">
+                            <label for="currentPrice" class="block text-xs font-medium text-[#787b86] mb-1">目前現價 (點)</label>
+                            <input type="number" id="currentPrice" value="40051" step="1" oninput="calculateAll()"
+                                class="w-full bg-transparent text-xl sm:text-2xl font-mono font-bold text-white focus:outline-none">
+                            <div class="mt-1.5 flex gap-1.5">
+                                <button type="button" onclick="adjustPrice('currentPrice', -50)" class="text-[11px] px-2 py-0.5 rounded bg-[#131722] text-[#787b86] hover:text-white border border-[#2a2e39]">-50</button>
+                                <button type="button" onclick="adjustPrice('currentPrice', 50)" class="text-[11px] px-2 py-0.5 rounded bg-[#131722] text-[#787b86] hover:text-white border border-[#2a2e39]">+50</button>
+                                <button type="button" onclick="adjustPrice('currentPrice', 100)" class="text-[11px] px-2 py-0.5 rounded bg-[#131722] text-[#787b86] hover:text-white border border-[#2a2e39]">+100</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#1e222d] p-3.5 rounded-xl border border-[#2a2e39] focus-within:border-amber-500 transition">
+                            <label for="vwapPrice" class="block text-xs font-medium text-amber-400/90 mb-1">當日均價線 VWAP (點)</label>
+                            <input type="number" id="vwapPrice" value="40093" step="1" oninput="calculateAll()"
+                                class="w-full bg-transparent text-xl sm:text-2xl font-mono font-bold text-amber-400 focus:outline-none">
+                            <div class="mt-1.5 flex gap-1.5">
+                                <button type="button" onclick="adjustPrice('vwapPrice', -20)" class="text-[11px] px-2 py-0.5 rounded bg-[#131722] text-[#787b86] hover:text-white border border-[#2a2e39]">-20</button>
+                                <button type="button" onclick="adjustPrice('vwapPrice', 20)" class="text-[11px] px-2 py-0.5 rounded bg-[#131722] text-[#787b86] hover:text-white border border-[#2a2e39]">+20</button>
+                                <button type="button" onclick="syncEntryToVwap()" class="text-[11px] px-2 py-0.5 rounded bg-blue-950/60 text-blue-300 hover:bg-blue-900 border border-blue-800/50">帶入風控</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 均價線趨勢選擇 -->
+                    <div>
+                        <label class="block text-xs font-medium text-[#787b86] mb-2">均價線斜率與方向 (觀察最近 15~30 分鐘走勢)</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5" id="slopeGroup">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="vwapSlope" value="up" class="peer sr-only" onchange="calculateAll()">
+                                <div class="p-3 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-red-500 peer-checked:bg-red-500/10 transition text-center">
+                                    <div class="text-sm font-bold text-white peer-checked:text-red-400">↗ 明顯往右上方</div>
+                                    <div class="text-[11px] text-[#787b86] mt-0.5">成本墊高・多頭推進</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="vwapSlope" value="flat" class="peer sr-only" checked onchange="calculateAll()">
+                                <div class="p-3 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-amber-500 peer-checked:bg-amber-500/10 transition text-center">
+                                    <div class="text-sm font-bold text-white">➡ 走平糾結</div>
+                                    <div class="text-[11px] text-[#787b86] mt-0.5">盤整洗盤・上下刷洗</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="vwapSlope" value="down" class="peer sr-only" onchange="calculateAll()">
+                                <div class="p-3 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10 transition text-center">
+                                    <div class="text-sm font-bold text-white">↘ 往右下方</div>
+                                    <div class="text-[11px] text-[#787b86] mt-0.5">偏空壓制・空方主場</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 時間與事件濾網 -->
+                    <div>
+                        <label class="block text-xs font-medium text-[#787b86] mb-2">時間與重大事件濾網 (動態調整波動容忍度)</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="timeFilter" value="normal" class="peer sr-only" checked onchange="calculateAll()">
+                                <div class="p-3 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-blue-500 peer-checked:bg-blue-500/10 transition">
+                                    <div class="text-sm font-bold text-white">一般交易時段</div>
+                                    <div class="text-[11px] text-[#787b86] mt-0.5">均價線支撐最純粹</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="timeFilter" value="settlement" class="peer sr-only" onchange="calculateAll()">
+                                <div class="p-3 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-amber-500 peer-checked:bg-amber-500/10 transition">
+                                    <div class="text-sm font-bold text-white">結算日 (12:30後)</div>
+                                    <div class="text-[11px] text-[#787b86] mt-0.5">週三/月結算・Theta極快</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="timeFilter" value="event" class="peer sr-only" onchange="calculateAll()">
+                                <div class="p-3 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-purple-500 peer-checked:bg-purple-500/10 transition">
+                                    <div class="text-sm font-bold text-white">大事件前後</div>
+                                    <div class="text-[11px] text-[#787b86] mt-0.5">CPI/FOMC/法說・防掃盤</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側雷達判讀結果卡 (5欄) -->
+                <div class="lg:col-span-5 flex flex-col">
+                    <div id="radarResultCard" class="flex-1 rounded-2xl bg-[#1e222d] border-2 border-[#2a2e39] p-5 flex flex-col justify-between transition-all duration-300">
+                        <div>
+                            <!-- 燈號標章 -->
+                            <div class="flex items-center justify-between gap-2 mb-4">
+                                <span id="signalBadge" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                                    🔴 紅燈：禁止做多 / 空手喝茶
+                                </span>
+                                <span id="zoneTag" class="text-xs font-mono px-2 py-1 rounded bg-[#131722] text-[#787b86]">
+                                    均線之下
+                                </span>
+                            </div>
+
+                            <!-- 乖離數據儀表 -->
+                            <div class="grid grid-cols-2 gap-3 bg-[#131722] p-3.5 rounded-xl border border-[#2a2e39] mb-4">
+                                <div>
+                                    <div class="text-[11px] text-[#787b86]">與均價線價差 (點數)</div>
+                                    <div id="diffPointsDisplay" class="text-xl font-mono font-bold text-emerald-400 mt-0.5">-42 點</div>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] text-[#787b86]">即時乖離率 (%)</div>
+                                    <div id="biasPercentDisplay" class="text-xl font-mono font-bold text-emerald-400 mt-0.5">-0.10%</div>
+                                </div>
+                            </div>
+
+                            <!-- 策略建議文案 -->
+                            <div class="space-y-2">
+                                <div class="text-xs font-bold uppercase tracking-wider text-[#787b86]">操作戰術建議</div>
+                                <h3 id="strategyTitle" class="text-base font-bold text-white leading-snug">
+                                    現價低於當日均價線，上方有鍋蓋壓力
+                                </h3>
+                                <p id="strategyDesc" class="text-sm text-[#d1d4dc]/90 leading-relaxed">
+                                    目前多數買進籌碼處於套牢狀態，切勿摸底接刀。請耐心等待價格重新站穩均價線之上且均線翻揚，再啟動偏多布局。
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 乖離區間參考尺 -->
+                        <div class="mt-5 pt-3 border-t border-[#2a2e39]/80 text-[11px] text-[#787b86] flex items-center justify-between">
+                            <span>貼線甜蜜區: 0~0.5% (約200點)</span>
+                            <span>過熱警戒: &gt;1.0% (約400點)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 區塊二：進場前風報比安全鎖 -->
+        <section class="bg-[#131722] rounded-2xl border border-[#2a2e39] p-4 sm:p-6 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-3 border-b border-[#2a2e39]">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-shield-check text-emerald-400 text-xl"></i>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-white">第二關：進場前風報比安全鎖</h2>
+                        <p class="text-xs text-[#787b86]">先算好「最多會賠多少錢」，通過風控才報單</p>
+                    </div>
+                </div>
+
+                <!-- 工具模式切換頁籤 -->
+                <div class="inline-flex p-1 rounded-xl bg-[#1e222d] border border-[#2a2e39] self-start sm:self-auto">
+                    <button type="button" id="tabFutures" onclick="switchMode('futures')"
+                        class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition bg-blue-600 text-white shadow">
+                        模式 A：微台期貨多單
+                    </button>
+                    <button type="button" id="tabOptions" onclick="switchMode('options')"
+                        class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition text-[#787b86] hover:text-white">
+                        模式 B：選擇權多頭價差
+                    </button>
+                </div>
+            </div>
+
+            <!-- 模式 A：微台指期貨多單 -->
+            <div id="futuresPanel" class="space-y-5">
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-[#2a2e39]">
+                        <label class="block text-xs text-[#787b86] mb-1">預計進場點位</label>
+                        <input type="number" id="futEntry" value="40100" oninput="calculateAll()"
+                            class="w-full bg-transparent text-lg font-mono font-bold text-white focus:outline-none">
+                    </div>
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-red-900/50">
+                        <label class="block text-xs text-red-400 mb-1">停損點位 (守均線)</label>
+                        <input type="number" id="futStop" value="40050" oninput="calculateAll()"
+                            class="w-full bg-transparent text-lg font-mono font-bold text-red-400 focus:outline-none">
+                    </div>
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-emerald-900/50">
+                        <label class="block text-xs text-emerald-400 mb-1">目標停利點位</label>
+                        <input type="number" id="futTarget" value="40250" oninput="calculateAll()"
+                            class="w-full bg-transparent text-lg font-mono font-bold text-emerald-400 focus:outline-none">
+                    </div>
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-[#2a2e39]">
+                        <label class="block text-xs text-[#787b86] mb-1">交易口數 (1點10元)</label>
+                        <input type="number" id="futLots" value="1" min="1" oninput="calculateAll()"
+                            class="w-full bg-transparent text-lg font-mono font-bold text-white focus:outline-none">
+                    </div>
+                    <div class="col-span-2 sm:col-span-1 bg-[#1e222d] p-3 rounded-xl border border-amber-900/50">
+                        <label class="block text-xs text-amber-400 mb-1">單筆最大虧損上限</label>
+                        <div class="flex items-center">
+                            <span class="text-xs text-[#787b86] mr-1">NT$</span>
+                            <input type="number" id="futMaxLossLimit" value="3000" step="500" oninput="calculateAll()"
+                                class="w-full bg-transparent text-lg font-mono font-bold text-amber-400 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 模式 B：選擇權多頭價差單 -->
+            <div id="optionsPanel" class="hidden space-y-5">
+                <!-- 賣方價差 vs 買方價差 切換 -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="optStrategyType" value="bull_put" class="peer sr-only" checked onchange="calculateAll()">
+                        <div class="p-3.5 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-blue-500 peer-checked:bg-blue-500/10 transition flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-white">Bull Put Spread (賣權多頭價差)</div>
+                                <div class="text-xs text-[#787b86] mt-0.5">賣支撐 Put + 買更低 Put・穩健收租、抗洗盤</div>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-300 font-medium">收權利金</span>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="optStrategyType" value="bull_call" class="peer sr-only" onchange="calculateAll()">
+                        <div class="p-3.5 rounded-xl bg-[#1e222d] border border-[#2a2e39] peer-checked:border-red-500 peer-checked:bg-red-500/10 transition flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-bold text-white">Bull Call Spread (買權多頭價差)</div>
+                                <div class="text-xs text-[#787b86] mt-0.5">買近價 Call + 賣壓力 Call・順勢波段、省成本</div>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded bg-red-500/20 text-red-300 font-medium">付權利金</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-[#2a2e39]">
+                        <label class="block text-xs text-[#787b86] mb-1">履約價間距 (點)</label>
+                        <input type="number" id="optSpreadWidth" value="100" step="50" oninput="calculateAll()"
+                            class="w-full bg-transparent text-lg font-mono font-bold text-white focus:outline-none">
+                        <span class="text-[10px] text-[#787b86]">例如 40100 與 40000 差 100 點</span>
+                    </div>
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-[#2a2e39]">
+                        <label id="optPremiumLabel" class="block text-xs text-blue-400 mb-1">淨收權利金點數</label>
+                        <input type="number" id="optPremium" value="35" step="1" oninput="calculateAll()"
+                            class="w-full bg-transparent text-lg font-mono font-bold text-white focus:outline-none">
+                        <span class="text-[10px] text-[#787b86]">選擇權 1 點 = NT$ 50</span>
+                    </div>
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-[#2a2e39]">
+                        <label class="block text-xs text-[#787b86] mb-1">交易組數 (口數)</label>
+                        <input type="number" id="optLots" value="1" min="1" oninput="calculateAll()"
+                            class="w-full bg-transparent text-lg font-mono font-bold text-white focus:outline-none">
+                    </div>
+                    <div class="bg-[#1e222d] p-3 rounded-xl border border-amber-900/50">
+                        <label class="block text-xs text-amber-400 mb-1">單筆最大虧損上限</label>
+                        <div class="flex items-center">
+                            <span class="text-xs text-[#787b86] mr-1">NT$</span>
+                            <input type="number" id="optMaxLossLimit" value="3500" step="500" oninput="calculateAll()"
+                                class="w-full bg-transparent text-lg font-mono font-bold text-amber-400 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 風報比計算結果與安全鎖橫幅 -->
+            <div class="mt-6 pt-5 border-t border-[#2a2e39]">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    <div class="bg-[#1e222d] p-4 rounded-xl border border-[#2a2e39]">
+                        <div class="text-xs text-[#787b86] flex items-center justify-between">
+                            <span>最大風險虧損 (鎖死上限)</span>
+                            <i class="ph ph-warning-circle text-red-400"></i>
+                        </div>
+                        <div id="resMaxLoss" class="text-2xl font-mono font-bold text-red-400 mt-1">NT$ 500</div>
+                        <div id="resLossPoints" class="text-xs text-[#787b86] mt-0.5">停損距離：50 點</div>
+                    </div>
+
+                    <div class="bg-[#1e222d] p-4 rounded-xl border border-[#2a2e39]">
+                        <div class="text-xs text-[#787b86] flex items-center justify-between">
+                            <span>預期最大收益</span>
+                            <i class="ph ph-trend-up text-emerald-400"></i>
+                        </div>
+                        <div id="resMaxProfit" class="text-2xl font-mono font-bold text-emerald-400 mt-1">NT$ 1,500</div>
+                        <div id="resProfitPoints" class="text-xs text-[#787b86] mt-0.5">獲利空間：150 點</div>
+                    </div>
+
+                    <div class="bg-[#1e222d] p-4 rounded-xl border border-[#2a2e39]">
+                        <div class="text-xs text-[#787b86] flex items-center justify-between">
+                            <span>風險報酬比 (虧 : 賺)</span>
+                            <i class="ph ph-scales text-blue-400"></i>
+                        </div>
+                        <div id="resRRRatio" class="text-2xl font-mono font-bold text-white mt-1">1 : 3.00</div>
+                        <div id="resRRNote" class="text-xs text-[#787b86] mt-0.5">標準建議 ≥ 1 : 1.50</div>
+                    </div>
+                </div>
+
+                <!-- 風控防呆警示橫幅 -->
+                <div id="riskGuardBanner" class="p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all">
+                    <div class="flex items-start sm:items-center gap-3">
+                        <div id="riskGuardIcon" class="text-2xl">✅</div>
+                        <div>
+                            <div id="riskGuardTitle" class="text-sm sm:text-base font-bold">符合風控標準，可依計畫報單</div>
+                            <div id="riskGuardDesc" class="text-xs opacity-90 mt-0.5">最大虧損在可承受範圍內，且風報比具備正期望值優勢。</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="copyTradePlan()"
+                        class="shrink-0 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-bold border border-white/15 transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="ph-bold ph-copy"></i>
+                        <span>複製交易計畫筆記</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 複製成功提示 Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-full bg-emerald-600 text-white text-sm font-bold shadow-2xl flex items-center gap-2 opacity-0 pointer-events-none transition-opacity duration-300">
+        <i class="ph-bold ph-check-circle text-lg"></i>
+        <span>已複製交易計畫筆記到剪貼簿！</span>
+    </div>
+
+    <script>
+        // 當前風報比模式狀態 ('futures' | 'options')
+        let currentMode = 'futures';
+        // 儲存最新計算狀態供複製筆記使用
+        let latestReport = {};
+
+        /**
+         * 增減價格快捷按鈕
+         */
+        function adjustPrice(elementId, delta) {
+            const el = document.getElementById(elementId);
+            const val = parseFloat(el.value) || 0;
+            el.value = val + delta;
+            calculateAll();
+        }
+
+        /**
+         * 將當日均價線快速帶入微台停損與進場參考
+         */
+        function syncEntryToVwap() {
+            const vwap = parseFloat(document.getElementById('vwapPrice').value) || 40000;
+            const current = parseFloat(document.getElementById('currentPrice').value) || vwap;
+            switchMode('futures');
+            document.getElementById('futEntry').value = Math.max(current, vwap + 10);
+            document.getElementById('futStop').value = vwap - 20;
+            document.getElementById('futTarget').value = Math.max(current, vwap + 10) + 150;
+            calculateAll();
+        }
+
+        /**
+         * 切換微台期貨與選擇權價差模式
+         */
+        function switchMode(mode) {
+            currentMode = mode;
+            const tabFut = document.getElementById('tabFutures');
+            const tabOpt = document.getElementById('tabOptions');
+            const panelFut = document.getElementById('futuresPanel');
+            const panelOpt = document.getElementById('optionsPanel');
+
+            if (mode === 'futures') {
+                tabFut.className = 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition bg-blue-600 text-white shadow';
+                tabOpt.className = 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition text-[#787b86] hover:text-white';
+                panelFut.classList.remove('hidden');
+                panelOpt.classList.add('hidden');
+            } else {
+                tabOpt.className = 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition bg-blue-600 text-white shadow';
+                tabFut.className = 'px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold transition text-[#787b86] hover:text-white';
+                panelOpt.classList.remove('hidden');
+                panelFut.classList.add('hidden');
+            }
+            calculateAll();
+        }
+
+        /**
+         * 重設為預設範例數值
+         */
+        function resetDefaults() {
+            document.getElementById('currentPrice').value = 40051;
+            document.getElementById('vwapPrice').value = 40093;
+            document.querySelector('input[name="vwapSlope"][value="flat"]').checked = true;
+            document.querySelector('input[name="timeFilter"][value="normal"]').checked = true;
+
+            document.getElementById('futEntry').value = 40100;
+            document.getElementById('futStop').value = 40050;
+            document.getElementById('futTarget').value = 40250;
+            document.getElementById('futLots').value = 1;
+            document.getElementById('futMaxLossLimit').value = 3000;
+
+            document.querySelector('input[name="optStrategyType"][value="bull_put"]').checked = true;
+            document.getElementById('optSpreadWidth').value = 100;
+            document.getElementById('optPremium').value = 35;
+            document.getElementById('optLots').value = 1;
+            document.getElementById('optMaxLossLimit').value = 3500;
+
+            calculateAll();
+        }
+
+        /**
+         * 核心計算邏輯：同時更新第一關雷達與第二關風報比安全鎖
+         */
+        function calculateAll() {
+            try {
+                // --- 1. 均價線偏多進場過濾器計算 ---
+                const currentPrice = parseFloat(document.getElementById('currentPrice').value) || 0;
+                const vwapPrice = parseFloat(document.getElementById('vwapPrice').value) || 1;
+                const slope = document.querySelector('input[name="vwapSlope"]:checked').value;
+                const timeFilter = document.querySelector('input[name="timeFilter"]:checked').value;
+
+                const diffPoints = currentPrice - vwapPrice;
+                const biasPercent = (diffPoints / vwapPrice) * 100;
+
+                // 更新乖離數字顯示
+                const diffEl = document.getElementById('diffPointsDisplay');
+                const biasEl = document.getElementById('biasPercentDisplay');
+                const sign = diffPoints > 0 ? '+' : '';
+                diffEl.textContent = `${sign}${diffPoints.toFixed(0)} 點`;
+                biasEl.textContent = `${sign}${biasPercent.toFixed(2)}%`;
+
+                // 台股習慣：正值紅字、負值綠字
+                const colorClass = diffPoints > 0 ? 'text-red-400' : (diffPoints < 0 ? 'text-emerald-400' : 'text-white');
+                diffEl.className = `text-xl font-mono font-bold mt-0.5 ${colorClass}`;
+                biasEl.className = `text-xl font-mono font-bold mt-0.5 ${colorClass}`;
+
+                // 判定燈號邏輯
+                let light = 'red'; // 'green' | 'yellow' | 'red'
+                let badgeText = '';
+                let zoneText = '';
+                let stratTitle = '';
+                let stratDesc = '';
+
+                if (currentPrice <= vwapPrice) {
+                    light = 'red';
+                    badgeText = '🔴 紅燈：禁止做多 / 空手喝茶';
+                    zoneText = '均價線之下';
+                    stratTitle = '現價低於當日均價線，上方有鍋蓋壓力';
+                    stratDesc = '目前今天進場的多單平均處於套牢狀態，均價線成為反壓。非妳的偏多主場，管住雙手、耐心等價格站穩均價線之上再說！';
+                } else if (slope !== 'up') {
+                    light = 'red';
+                    badgeText = '🔴 紅燈：均線未翻揚・防洗盤';
+                    zoneText = slope === 'flat' ? '均線走平糾結' : '均線往右下方';
+                    stratTitle = '均價線尚未明顯往右上方推進';
+                    stratDesc = '雖然價格暫時在均價線之上，但均價線走平或向下代表趨勢尚未確立，極易在均線上下來回刷洗。等待均價線明確仰角向上再出手。';
+                } else if (biasPercent > 1.0) {
+                    light = 'red';
+                    badgeText = '🔴 紅燈：乖離過大・嚴禁追高';
+                    zoneText = '極端過熱 (>1.0%)';
+                    stratTitle = `已拉離均價線 ${diffPoints.toFixed(0)} 點，隨時可能回檔`;
+                    stratDesc = '單日正乖離超過 1.0%（約 400 點以上），獲利了結賣壓隨時出籠。此時追多極易買在短線最高點，請耐心等拉回測試均價線不破再進場。';
+                } else if (biasPercent > 0.5 || timeFilter !== 'normal') {
+                    light = 'yellow';
+                    badgeText = '🟡 黃燈：謹慎偏多 / 勿追期貨';
+                    if (timeFilter === 'settlement') {
+                        zoneText = '結算日 12:30 後時段';
+                        stratTitle = '結算日 12:30 後時間價值歸零極快，嚴禁當買方（不買 Call）';
+                        stratDesc = '大方向偏多且均線上揚，但結算日 12:30 後即將進入最後算價波動，買方時間價值歸零極快。建議改用「微台短打」或「賣方價差單（Bull Put Spread）」守在均價線下方賺最後一哩路。';
+                    } else if (timeFilter === 'event') {
+                        zoneText = '大事件波動前後';
+                        stratTitle = '事件前後防上下劇烈掃盤，禁用無保護期貨';
+                        stratDesc = '數據公布或法說前後常有假跌破洗盤。若要參與偏多行情，一律改用「風險鎖死的選擇權價差單 (Bull Put / Bull Call Spread)」，避免期貨被瞬間掃出場。';
+                    } else {
+                        zoneText = '趨勢延伸區 (0.5%~1.0%)';
+                        stratTitle = '趨勢已拉開一段距離，不追微台期貨多單';
+                        stratDesc = `目前正乖離 ${biasPercent.toFixed(2)}%（約 ${diffPoints.toFixed(0)} 點），直接追期貨停損距離太遠。建議改用「Bull Put Spread」把防守線設在均價線下方，穩健賺時間價值。`;
+                    }
+                } else {
+                    // 0% < biasPercent <= 0.5% 且 slope === 'up' 且 timeFilter === 'normal'
+                    light = 'green';
+                    badgeText = '🟢 綠燈：最佳貼線起漲甜蜜點';
+                    zoneText = '貼線起漲區 (0~0.5%)';
+                    stratTitle = '均線右上推進 ＋ 貼線乖離適中，高勝率主場！';
+                    stratDesc = `現價僅高於均價線 ${diffPoints.toFixed(0)} 點，防守點（均價線）非常近！可進場「微台多單」（跌破均價線停損），或建立「Bull Call Spread / Bull Put Spread」順勢操作。`;
+                }
+
+                // 套用雷達卡片視覺樣式
+                const radarCard = document.getElementById('radarResultCard');
+                const badgeEl = document.getElementById('signalBadge');
+                radarCard.classList.remove('card-glow-green', 'card-glow-yellow', 'card-glow-red');
+
+                if (light === 'green') {
+                    radarCard.classList.add('card-glow-green');
+                    badgeEl.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+                } else if (light === 'yellow') {
+                    radarCard.classList.add('card-glow-yellow');
+                    badgeEl.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+                } else {
+                    radarCard.classList.add('card-glow-red');
+                    badgeEl.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-sm font-bold bg-red-500/20 text-red-300 border border-red-500/40';
+                }
+
+                badgeEl.textContent = badgeText;
+                document.getElementById('zoneTag').textContent = zoneText;
+                document.getElementById('strategyTitle').textContent = stratTitle;
+                document.getElementById('strategyDesc').textContent = stratDesc;
+
+                // --- 2. 進場前風報比安全鎖計算 ---
+                let maxLoss = 0;
+                let maxProfit = 0;
+                let rrRatio = 0;
+                let lossLimit = 3000;
+                let minRequiredRR = 1.5;
+                let modeSummaryText = '';
+
+                if (currentMode === 'futures') {
+                    const entry = parseFloat(document.getElementById('futEntry').value) || 0;
+                    const stop = parseFloat(document.getElementById('futStop').value) || 0;
+                    const target = parseFloat(document.getElementById('futTarget').value) || 0;
+                    const lots = Math.max(1, parseInt(document.getElementById('futLots').value) || 1);
+                    lossLimit = parseFloat(document.getElementById('futMaxLossLimit').value) || 0;
+
+                    const riskPts = Math.max(0, entry - stop);
+                    const rewardPts = Math.max(0, target - entry);
+
+                    maxLoss = riskPts * 10 * lots;
+                    maxProfit = rewardPts * 10 * lots;
+                    rrRatio = maxLoss > 0 ? (maxProfit / maxLoss) : 0;
+                    minRequiredRR = 1.5;
+
+                    document.getElementById('resLossPoints').textContent = `停損距離：${riskPts} 點 (${lots} 口微台)`;
+                    document.getElementById('resProfitPoints').textContent = `預期獲利：${rewardPts} 點 (${lots} 口微台)`;
+                    document.getElementById('resRRNote').textContent = `期貨多單建議風報比 ≥ 1 : 1.50`;
+
+                    modeSummaryText = `微台多單 ${lots} 口 (進場 ${entry} / 停損 ${stop} / 停利 ${target})`;
+                } else {
+                    const optType = document.querySelector('input[name="optStrategyType"]:checked').value;
+                    const width = Math.max(50, parseFloat(document.getElementById('optSpreadWidth').value) || 100);
+                    const premium = Math.max(0, parseFloat(document.getElementById('optPremium').value) || 0);
+                    const lots = Math.max(1, parseInt(document.getElementById('optLots').value) || 1);
+                    lossLimit = parseFloat(document.getElementById('optMaxLossLimit').value) || 0;
+
+                    const premLabel = document.getElementById('optPremiumLabel');
+                    if (optType === 'bull_put') {
+                        premLabel.textContent = '淨收權利金點數';
+                        const riskPts = Math.max(0, width - premium);
+                        const rewardPts = premium;
+                        maxLoss = riskPts * 50 * lots;
+                        maxProfit = rewardPts * 50 * lots;
+                        rrRatio = maxLoss > 0 ? (maxProfit / maxLoss) : 0;
+                        minRequiredRR = 0.4; // 賣方價差勝率較高，通常收 30~40 點 / 100 點間距 (風報比約 0.43~0.67)
+
+                        document.getElementById('resLossPoints').textContent = `最大風險點數：${riskPts} 點 (${lots} 組)`;
+                        document.getElementById('resProfitPoints').textContent = `最大收租點數：${rewardPts} 點 (${lots} 組)`;
+                        document.getElementById('resRRNote').textContent = `賣方價差高勝率・建議 ≥ 1 : 0.40`;
+                        modeSummaryText = `Bull Put Spread ${lots} 組 (間距 ${width} 點 / 淨收 ${premium} 點)`;
+                    } else {
+                        premLabel.textContent = '淨付權利金點數';
+                        const riskPts = premium;
+                        const rewardPts = Math.max(0, width - premium);
+                        maxLoss = riskPts * 50 * lots;
+                        maxProfit = rewardPts * 50 * lots;
+                        rrRatio = maxLoss > 0 ? (maxProfit / maxLoss) : 0;
+                        minRequiredRR = 1.5;
+
+                        document.getElementById('resLossPoints').textContent = `最大風險點數：${riskPts} 點 (${lots} 組)`;
+                        document.getElementById('resProfitPoints').textContent = `最大獲利點數：${rewardPts} 點 (${lots} 組)`;
+                        document.getElementById('resRRNote').textContent = `買方價差建議風報比 ≥ 1 : 1.50`;
+                        modeSummaryText = `Bull Call Spread ${lots} 組 (間距 ${width} 點 / 淨付 ${premium} 點)`;
+                    }
+                }
+
+                // 更新金額與風報比數字
+                document.getElementById('resMaxLoss').textContent = `NT$ ${maxLoss.toLocaleString()}`;
+                document.getElementById('resMaxProfit').textContent = `NT$ ${maxProfit.toLocaleString()}`;
+                document.getElementById('resRRRatio').textContent = maxLoss > 0 ? `1 : ${rrRatio.toFixed(2)}` : '無法計算';
+
+                // 判定風控橫幅
+                const banner = document.getElementById('riskGuardBanner');
+                const iconEl = document.getElementById('riskGuardIcon');
+                const titleEl = document.getElementById('riskGuardTitle');
+                const descEl = document.getElementById('riskGuardDesc');
+
+                const isLossOver = maxLoss > lossLimit;
+                const isRRPoor = rrRatio < minRequiredRR || maxProfit <= 0;
+
+                let guardStatusText = '';
+                if (maxLoss <= 0 || maxProfit <= 0) {
+                    banner.className = 'p-4 rounded-xl border bg-amber-500/10 border-amber-500/40 text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all';
+                    iconEl.textContent = '⚠️';
+                    titleEl.textContent = '請確認停損與目標點位設定是否合理';
+                    descEl.textContent = '停損點位需低於進場點位，目標點位需高於進場點位。';
+                    guardStatusText = '⚠️ 點位設定異常';
+                } else if (isLossOver && isRRPoor) {
+                    banner.className = 'p-4 rounded-xl border bg-red-500/15 border-red-500/50 text-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all';
+                    iconEl.textContent = '🛑';
+                    titleEl.textContent = '雙重違反風控警戒：虧損超標 ＋ 風報比不划算！';
+                    descEl.textContent = `最大虧損 NT$ ${maxLoss.toLocaleString()} 已超過上限 (NT$ ${lossLimit.toLocaleString()})，且風報比 1:${rrRatio.toFixed(2)} 偏低，建議放棄或縮小口數！`;
+                    guardStatusText = '🛑 違反風控 (虧損超標且風報比過低)';
+                } else if (isLossOver) {
+                    banner.className = 'p-4 rounded-xl border bg-red-500/15 border-red-500/50 text-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all';
+                    iconEl.textContent = '⚠️';
+                    titleEl.textContent = '違反風控警戒：單筆最大虧損超過承受上限！';
+                    descEl.textContent = `預估最大虧損 NT$ ${maxLoss.toLocaleString()} > 設定上限 NT$ ${lossLimit.toLocaleString()}。請減少交易口數或縮小停損距離。`;
+                    guardStatusText = '⚠️ 違反風控 (單筆虧損超標)';
+                } else if (isRRPoor) {
+                    banner.className = 'p-4 rounded-xl border bg-amber-500/15 border-amber-500/50 text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all';
+                    iconEl.textContent = '⚠️';
+                    titleEl.textContent = '違反風控警戒：風報比不划算（賠率過低）！';
+                    descEl.textContent = `目前風報比僅 1 : ${rrRatio.toFixed(2)}（低於建議標準 1 : ${minRequiredRR.toFixed(2)}），承擔風險與預期利潤不成比例，建議等更好點位。`;
+                    guardStatusText = '⚠️ 違反風控 (風報比不划算)';
+                } else {
+                    banner.className = 'p-4 rounded-xl border bg-emerald-500/15 border-emerald-500/50 text-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all';
+                    iconEl.textContent = '✅';
+                    titleEl.textContent = '符合風控標準，可依計畫報單！';
+                    descEl.textContent = `最大虧損 NT$ ${maxLoss.toLocaleString()} 在安全上限內，且風報比達 1 : ${rrRatio.toFixed(2)}，紀律執行即可。`;
+                    guardStatusText = '✅ 符合風控，可依計畫報單';
+                }
+
+                // 儲存摘要資訊供複製按鈕使用
+                latestReport = {
+                    time: new Date().toLocaleString('zh-TW', { hour12: false }),
+                    currentPrice,
+                    vwapPrice,
+                    diffPoints: `${sign}${diffPoints.toFixed(0)}`,
+                    biasPercent: `${sign}${biasPercent.toFixed(2)}%`,
+                    badgeText,
+                    stratTitle,
+                    modeSummaryText,
+                    maxLoss: `NT$ ${maxLoss.toLocaleString()}`,
+                    maxProfit: `NT$ ${maxProfit.toLocaleString()}`,
+                    rrRatio: `1 : ${rrRatio.toFixed(2)}`,
+                    guardStatusText
+                };
+
+            } catch (err) {
+                console.error('計算過程發生錯誤:', err);
+            }
+        }
+
+        /**
+         * 一鍵複製交易計畫筆記到剪貼簿 (相容 iframe 環境)
+         */
+        function copyTradePlan() {
+            const text = [
+                `📊【AVON 均價線偏多決策 & 風控筆記】`,
+                `時間：${latestReport.time}`,
+                `-----------------------------`,
+                `1️⃣ 均價線雷達判讀：${latestReport.badgeText}`,
+                `• 現價 / 均價線：${latestReport.currentPrice} / ${latestReport.vwapPrice} (乖離 ${latestReport.diffPoints} 點 / ${latestReport.biasPercent})`,
+                `• 戰術結論：${latestReport.stratTitle}`,
+                `-----------------------------`,
+                `2️⃣ 進場前風報比安全鎖：${latestReport.guardStatusText}`,
+                `• 預計策略：${latestReport.modeSummaryText}`,
+                `• 最大虧損上限：${latestReport.maxLoss}`,
+                `• 預期最大收益：${latestReport.maxProfit}`,
+                `• 風險報酬比：${latestReport.rrRatio}`
+            ].join('\n');
+
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast();
+            } catch (err) {
+                console.error('複製失敗:', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        /**
+         * 顯示複製成功浮動提示
+         */
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
+
+        // 頁面載入後立即執行首次計算
+        window.addEventListener('DOMContentLoaded', calculateAll);
+    </script>
+</body>
+</html>
