@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AVON 均價線偏多決策雷達 & 風報比計算機</title>
+    <title>AVON 多週期趨勢狙擊雷達 & 風報比計算機</title>
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -232,21 +232,21 @@
 
 <div class="container">
     <header>
-        <h1>均價線偏多決策雷達 & 風報比計算機</h1>
-        <p>AVON 專屬台指期 / 選擇權順勢濾網與風控安全鎖</p>
+        <h1>多週期趨勢狙擊雷達 & 風報比計算機</h1>
+        <p>AVON 專屬台指期 / 選擇權跨週期濾網與風控安全鎖</p>
     </header>
 
-    <!-- 第一關：均價線雷達 -->
+    <!-- 第一關：跨週期趨勢與突破雷達 -->
     <div class="card">
         <div class="card-title">
-            <span>第一關：均價線 (VWAP) 偏多進場雷達</span>
-            <span style="font-size: 0.8rem; color: var(--text-sub);">只看多方主場</span>
+            <span>第一關：日線大趨勢 & 5分K小趨勢雷達</span>
+            <span style="font-size: 0.8rem; color: var(--text-sub);">跨格局風控</span>
         </div>
 
         <div class="input-row">
             <div class="input-group">
                 <label for="currentPrice">目前現價 (點)</label>
-                <input type="number" id="currentPrice" value="40051" step="1">
+                <input type="number" id="currentPrice" value="40358" step="1">
                 <div class="quick-btns">
                     <button class="btn-sm" onclick="adjustPrice(-50)">-50</button>
                     <button class="btn-sm" onclick="adjustPrice(50)">+50</button>
@@ -255,49 +255,54 @@
             </div>
             <div class="input-group">
                 <label for="vwapPrice">當日均價線 VWAP (點)</label>
-                <input type="number" id="vwapPrice" value="40093" step="1">
+                <input type="number" id="vwapPrice" value="39953" step="1">
                 <div class="quick-btns">
                     <button class="btn-sm" onclick="adjustVwap(-20)">-20</button>
                     <button class="btn-sm" onclick="adjustVwap(20)">+20</button>
-                    <button class="btn-action" onclick="syncVwapToRisk()" title="帶入下方停損">帶入風控</button>
+                    <button class="btn-action" onclick="syncVwapToRisk()">帶入風控</button>
                 </div>
             </div>
         </div>
 
-        <!-- 均價線斜率選擇 -->
+        <!-- 選擇 1：日線大趨勢 -->
         <div class="options-group">
-            <label>均價線斜率與方向 (觀察近 15~30 分鐘走勢)</label>
-            <div class="option-chips" id="slopeGroup">
-                <div class="chip active" onclick="setSlope('up')">↗ 明顯往右上方 (成本墊高、多頭推進)</div>
-                <div class="chip" onclick="setSlope('flat')">→ 走平糾結 (盤整洗盤、上下刷洗)</div>
-                <div class="chip" onclick="setSlope('down')">↘ 往右下方 (偏空壓制、空方主場)</div>
+            <label>1. 日線大趨勢方向 (決定格局安全係數)</label>
+            <div class="option-chips" id="dailyTrendGroup">
+                <div class="chip" onclick="setDailyTrend('up')">🟢 日線向上 (多頭主場、波段可期)</div>
+                <div class="chip active" onclick="setDailyTrend('down')">🔴 日線向下 (空方壓制、反彈格局/慎防長黑)</div>
             </div>
         </div>
 
-        <!-- 時間與事件濾網 -->
+        <!-- 選擇 2：5分K小趨勢 -->
         <div class="options-group">
-            <label>時間與重大事件濾網 (動態調整波動容忍度)</label>
-            <div class="option-chips" id="timeGroup">
-                <div class="chip active" onclick="setTimeFilter('normal')">一般交易時段 (均價線支撐最純粹)</div>
-                <div class="chip" onclick="setTimeFilter('settle')">結算日 (12:30後) (週三/月結算，Theta極快)</div>
-                <div class="chip" onclick="setTimeFilter('event')">大事件前後 (CPI/FOMC/法說，防掃盤)</div>
+            <label>2. 5分K小趨勢結構 (決定短線進場動能)</label>
+            <div class="option-chips" id="m5TrendGroup">
+                <div class="chip active" onclick="setM5Trend('up')">↗ 5分K向上急拉 / 突破前高蓄勢</div>
+                <div class="chip" onclick="setM5Trend('flat')">→ 5分K盤整糾結 (等待表態)</div>
+                <div class="chip" onclick="setM5Trend('down')">↘ 5分K向下回測</div>
             </div>
+        </div>
+
+        <!-- 突破預警點 -->
+        <div class="input-group">
+            <label for="breakoutPoint">5分K近期前高 / 突破狙擊點 (點)</label>
+            <input type="number" id="breakoutPoint" value="40250" step="1">
         </div>
 
         <!-- 雷達輸出結果 -->
-        <div id="radarResult" class="result-box status-red">
-            <div class="status-title" id="resTitle">紅燈：禁止做多 / 空手喝茶</div>
-            <div class="status-desc" id="resDesc">現價低於均價線，上方有鍋蓋壓力。</div>
+        <div id="radarResult" class="result-box status-yellow">
+            <div class="status-title" id="resTitle">🟡 黃燈：日線向下 ＋ 5分K向上（搶短反彈）</div>
+            <div class="status-desc" id="resDesc">大方向空方壓制，但短線急拉有肉。可做極短線或用選擇權價差，嚴禁抱過夜！</div>
         </div>
 
         <div class="metrics-grid">
             <div class="metric-card">
-                <div class="metric-label">與均價線價差</div>
-                <div class="metric-val" id="diffPoints">-42 點</div>
+                <div class="metric-label">現價與均價線價差</div>
+                <div class="metric-val" id="diffPoints">+405 點</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">即時乖離率 (%)</div>
-                <div class="metric-val" id="diffPercent">-0.10%</div>
+                <div class="metric-label">距 5分K突破點</div>
+                <div class="metric-val" id="breakoutDiff">+108 點</div>
             </div>
         </div>
     </div>
@@ -319,17 +324,17 @@
             <div class="input-row">
                 <div class="input-group">
                     <label>預計進場點位</label>
-                    <input type="number" id="fEntry" value="40093">
+                    <input type="number" id="fEntry" value="40250">
                 </div>
                 <div class="input-group">
-                    <label>停損點位 (守均線)</label>
-                    <input type="number" id="fStop" value="40050">
+                    <label>停損點位 (嚴格守支撐)</label>
+                    <input type="number" id="fStop" value="40200">
                 </div>
             </div>
             <div class="input-row">
                 <div class="input-group">
-                    <label>目標停利點位</label>
-                    <input type="number" id="fTarget" value="40250">
+                    <label>目標停利點位 (見好就收)</label>
+                    <input type="number" id="fTarget" value="40400">
                 </div>
                 <div class="input-group">
                     <label>交易口數 (1點10元)</label>
@@ -340,16 +345,16 @@
             <div class="metrics-grid">
                 <div class="metric-card">
                     <div class="metric-label">預估最大虧損</div>
-                    <div class="metric-val" id="fMaxLoss" style="color: var(--red);">$430</div>
+                    <div class="metric-val" id="fMaxLoss" style="color: var(--red);">$500</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-label">預估最大收益</div>
-                    <div class="metric-val" id="fMaxGain" style="color: var(--green);">$1,570</div>
+                    <div class="metric-val" id="fMaxGain" style="color: var(--green);">$1,500</div>
                 </div>
             </div>
             <div class="metric-card" style="margin-top: 12px;">
                 <div class="metric-label">計算後風報比 (Reward / Risk)</div>
-                <div class="metric-val" id="fRR">3.65 : 1</div>
+                <div class="metric-val" id="fRR">3.00 : 1</div>
             </div>
         </div>
 
@@ -389,8 +394,8 @@
 </div>
 
 <script>
-    let currentSlope = 'up';
-    let currentTimeFilter = 'normal';
+    let dailyTrend = 'down';
+    let m5Trend = 'up';
     let currentMode = 'futures';
 
     function adjustPrice(val) {
@@ -410,19 +415,19 @@
         document.getElementById('fEntry').value = vwap;
         document.getElementById('fStop').value = parseInt(vwap) - 40;
         calculateFutures();
-        alert('已成功將均價線帶入風控計算機的進場與停損點位！');
+        alert('已成功將均價線帶入風控計算機！');
     }
 
-    function setSlope(slope) {
-        currentSlope = slope;
-        document.querySelectorAll('#slopeGroup .chip').forEach(c => c.classList.remove('active'));
+    function setDailyTrend(trend) {
+        dailyTrend = trend;
+        document.querySelectorAll('#dailyTrendGroup .chip').forEach(c => c.classList.remove('active'));
         event.currentTarget.classList.add('active');
         calculateRadar();
     }
 
-    function setTimeFilter(tf) {
-        currentTimeFilter = tf;
-        document.querySelectorAll('#timeGroup .chip').forEach(c => c.classList.remove('active'));
+    function setM5Trend(trend) {
+        m5Trend = trend;
+        document.querySelectorAll('#m5TrendGroup .chip').forEach(c => c.classList.remove('active'));
         event.currentTarget.classList.add('active');
         calculateRadar();
     }
@@ -438,51 +443,35 @@
     function calculateRadar() {
         let price = parseFloat(document.getElementById('currentPrice').value) || 0;
         let vwap = parseFloat(document.getElementById('vwapPrice').value) || 0;
+        let breakout = parseFloat(document.getElementById('breakoutPoint').value) || 0;
         
         let diff = price - vwap;
-        let diffPct = vwap > 0 ? (diff / vwap) * 100 : 0;
+        let breakoutDiff = price - breakout;
 
         document.getElementById('diffPoints').innerText = (diff >= 0 ? '+' : '') + diff.toFixed(0) + ' 點';
-        document.getElementById('diffPercent').innerText = (diffPct >= 0 ? '+' : '') + diffPct.toFixed(2) + '%';
+        document.getElementById('breakoutDiff').innerText = (breakoutDiff >= 0 ? '+' : '') + breakoutDiff.toFixed(0) + ' 點';
 
         let box = document.getElementById('radarResult');
         let title = document.getElementById('resTitle');
         let desc = document.getElementById('resDesc');
 
-        // 判斷邏輯
-        let isAbove = diff >= 0;
-        
-        if (!isAbove) {
-            box.className = 'result-box status-red';
-            title.innerText = '🔴 紅燈：禁止做多 / 空手喝茶';
-            desc.innerText = '現價低於當日均價線，上方有鍋蓋壓力。非妳的主場，管住雙手，耐心等價格站穩均價線再說！';
-        } else if (currentSlope === 'down' || currentSlope === 'flat') {
-            box.className = 'result-box status-red';
-            title.innerText = '🔴 紅燈：均線走平或向下，暫緩進場';
-            desc.innerText = '雖然價格在均價線之上，但均線方向不對（走平或向下），容易陷入盤整洗盤，建議觀望。';
-        } else if (currentTimeFilter === 'event') {
+        // 核心跨週期邏輯判斷
+        if (dailyTrend === 'up' && m5Trend === 'up') {
+            box.className = 'result-box status-green';
+            title.innerText = '🟢 綠燈：大格局多頭 ＋ 5分K強勢向上（主升段噴出）';
+            desc.innerText = '天時地利人和！日線與 5 分 K 方向一致，可安心執行多方微台或 Bull Call Spread，逢回支撐皆可積極偏多。';
+        } else if (dailyTrend === 'down' && m5Trend === 'up') {
             box.className = 'result-box status-yellow';
-            title.innerText = '🟡 黃燈：大事件前後，防掃盤';
-            desc.innerText = '重大事件前後波動劇烈、假突破多。禁用期貨，若要進場務必改用風險鎖死的選擇權價差單！';
-        } else if (diffPct > 1.0) {
+            title.innerText = '🟡 黃燈：日線向下（空方壓制） ＋ 5分K向上（搶短反彈）';
+            desc.innerText = '注意：目前屬於「大空格局中的短多反彈」，隨時可能撞上日線反壓。可做極短線短打或用選擇權價差，嚴禁抱過夜！';
+        } else if (dailyTrend === 'down' && m5Trend === 'down') {
             box.className = 'result-box status-red';
-            title.innerText = '🔴 紅燈：乖離過大（> 1.0%），嚴禁追高';
-            desc.innerText = '短線漲幅過快、乖離超過 400 點，隨時有均值回歸回測均價線風險。空手等回測！';
-        } else if (diffPct >= 0.5 && diffPct <= 1.0) {
-            box.className = 'result-box status-yellow';
-            title.innerText = '🟡 黃燈：趨勢延伸警戒區（勿追期貨）';
-            desc.innerText = '已拉開一段空間。不追微台多單，建議改用 Bull Put Spread 守在均價線下方收租！';
+            title.innerText = '🔴 紅燈：雙週期皆向下（標準空方主場）';
+            desc.innerText = '大格局與短線同步走空，非妳的舒適主場！嚴禁做多，乖乖空手喝茶或觀望。';
         } else {
-            // 0 ~ 0.5% 且向上
-            if (currentTimeFilter === 'settle') {
-                box.className = 'result-box status-yellow';
-                title.innerText = '🟡 黃燈：結算日 12:30 後（Theta 極快）';
-                desc.innerText = '結算尾盤時間價值消滅極快！嚴禁單買 Call，建議以微台短打或 Bull Put Spread 賺取最後一哩路。';
-            } else {
-                box.className = 'result-box status-green';
-                title.innerText = '🟢 綠燈：貼線起漲甜蜜點！可進場多方';
-                desc.innerText = '均價線向上 + 價格貼線（200點內），停損好守！可進場微台多單或 Bull Call Spread。';
-            }
+            box.className = 'result-box status-yellow';
+            title.innerText = '🟡 黃燈：盤整糾結期（等待多空表態）';
+            desc.innerText = '跨週期訊號較為分歧，盤面震盪洗盤機率高，建議縮手等待 5 分 K 突破前高再動作。';
         }
     }
 
@@ -518,7 +507,6 @@
         document.getElementById('oRR').innerText = rr + ' : 1';
     }
 
-    // 監聽輸入即時計算
     document.querySelectorAll('input').forEach(input => {
         input.addEventListener('input', () => {
             calculateRadar();
@@ -527,7 +515,6 @@
         });
     });
 
-    // 初始化執行一次
     calculateRadar();
     calculateFutures();
     calculateOption();
