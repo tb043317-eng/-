@@ -3,522 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AVON 多週期趨勢狙擊雷達 & 風報比計算機</title>
+    <title>台指選擇權 OI 籌碼邊界與箱型雷達</title>
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></script>
     <style>
-        :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-sub: #64748b;
-            --border-color: #e2e8f0;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --green: #16a34a;
-            --green-bg: #dcfce7;
-            --yellow: #ca8a04;
-            --yellow-bg: #fef9c3;
-            --red: #dc2626;
-            --red-bg: #fee2e2;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 16px;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        header h1 {
-            font-size: 1.35rem;
-            margin: 0 0 6px 0;
-            color: var(--text-main);
-        }
-
-        header p {
-            font-size: 0.9rem;
-            color: var(--text-sub);
-            margin: 0;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .input-group {
-            margin-bottom: 16px;
-        }
-
-        .input-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--text-sub);
-            margin-bottom: 6px;
-            font-weight: 600;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px 12px;
-            font-size: 1.1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background-color: #fff;
-            color: var(--text-main);
-            box-sizing: border-box;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .quick-btns {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-        }
-
-        .btn-sm {
-            padding: 4px 8px;
-            font-size: 0.8rem;
-            background: #e2e8f0;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: var(--text-main);
-        }
-        .btn-sm:hover { background: #cbd5e1; }
-
-        .btn-action {
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            padding: 4px 10px;
-            font-size: 0.8rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn-action:hover { background: var(--primary-hover); }
-
-        .options-group {
-            margin-bottom: 16px;
-        }
-
-        .option-chips {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-        }
-
-        .chip {
-            padding: 10px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: #fff;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 500;
-            text-align: left;
-            transition: all 0.2s;
-        }
-
-        .chip.active {
-            border-color: var(--primary);
-            background: #eff6ff;
-            color: var(--primary);
-            font-weight: 700;
-        }
-
-        .result-box {
-            padding: 16px;
-            border-radius: 8px;
-            margin-top: 16px;
-            text-align: center;
-        }
-
-        .status-green { background: var(--green-bg); color: var(--green); border: 1px solid #bbf7d0; }
-        .status-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #fde047; }
-        .status-red { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
-
-        .status-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .status-desc {
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 12px;
-        }
-
-        .metric-card {
-            background: #f1f5f9;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .metric-label { font-size: 0.75rem; color: var(--text-sub); }
-        .metric-val { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
-
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            background: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
-        .tab-btn.active {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-        }
-
-        .mode-content { display: none; }
-        .mode-content.active { display: block; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
+        .input-dark { background-color: #0f172a; border: 1px solid #475569; color: #fff; }
     </style>
 </head>
-<body>
-
-<div class="container">
-    <header>
-        <h1>多週期趨勢狙擊雷達 & 風報比計算機</h1>
-        <p>AVON 專屬台指期 / 選擇權跨週期濾網與風控安全鎖</p>
-    </header>
-
-    <!-- 第一關：跨週期趨勢與突破雷達 -->
-    <div class="card">
-        <div class="card-title">
-            <span>第一關：日線大趨勢 & 5分K小趨勢雷達</span>
-            <span style="font-size: 0.8rem; color: var(--text-sub);">跨格局風控</span>
-        </div>
-
-        <div class="input-row">
-            <div class="input-group">
-                <label for="currentPrice">目前現價 (點)</label>
-                <input type="number" id="currentPrice" value="40358" step="1">
-                <div class="quick-btns">
-                    <button class="btn-sm" onclick="adjustPrice(-50)">-50</button>
-                    <button class="btn-sm" onclick="adjustPrice(50)">+50</button>
-                    <button class="btn-sm" onclick="adjustPrice(100)">+100</button>
-                </div>
-            </div>
-            <div class="input-group">
-                <label for="vwapPrice">當日均價線 VWAP (點)</label>
-                <input type="number" id="vwapPrice" value="39953" step="1">
-                <div class="quick-btns">
-                    <button class="btn-sm" onclick="adjustVwap(-20)">-20</button>
-                    <button class="btn-sm" onclick="adjustVwap(20)">+20</button>
-                    <button class="btn-action" onclick="syncVwapToRisk()">帶入風控</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 選擇 1：日線大趨勢 -->
-        <div class="options-group">
-            <label>1. 日線大趨勢方向 (決定格局安全係數)</label>
-            <div class="option-chips" id="dailyTrendGroup">
-                <div class="chip" onclick="setDailyTrend('up')">🟢 日線向上 (多頭主場、波段可期)</div>
-                <div class="chip active" onclick="setDailyTrend('down')">🔴 日線向下 (空方壓制、反彈格局/慎防長黑)</div>
-            </div>
-        </div>
-
-        <!-- 選擇 2：5分K小趨勢 -->
-        <div class="options-group">
-            <label>2. 5分K小趨勢結構 (決定短線進場動能)</label>
-            <div class="option-chips" id="m5TrendGroup">
-                <div class="chip active" onclick="setM5Trend('up')">↗ 5分K向上急拉 / 突破前高蓄勢</div>
-                <div class="chip" onclick="setM5Trend('flat')">→ 5分K盤整糾結 (等待表態)</div>
-                <div class="chip" onclick="setM5Trend('down')">↘ 5分K向下回測</div>
-            </div>
-        </div>
-
-        <!-- 突破預警點 -->
-        <div class="input-group">
-            <label for="breakoutPoint">5分K近期前高 / 突破狙擊點 (點)</label>
-            <input type="number" id="breakoutPoint" value="40250" step="1">
-        </div>
-
-        <!-- 雷達輸出結果 -->
-        <div id="radarResult" class="result-box status-yellow">
-            <div class="status-title" id="resTitle">🟡 黃燈：日線向下 ＋ 5分K向上（搶短反彈）</div>
-            <div class="status-desc" id="resDesc">大方向空方壓制，但短線急拉有肉。可做極短線或用選擇權價差，嚴禁抱過夜！</div>
-        </div>
-
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-label">現價與均價線價差</div>
-                <div class="metric-val" id="diffPoints">+405 點</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-label">距 5分K突破點</div>
-                <div class="metric-val" id="breakoutDiff">+108 點</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 第二關：風報比計算機 -->
-    <div class="card">
-        <div class="card-title">
-            <span>第二關：進場前風報比安全鎖</span>
-            <span style="font-size: 0.8rem; color: var(--text-sub);">先算好最多賠多少</span>
-        </div>
-
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchMode('futures')">模式 A：微台期貨多單</button>
-            <button class="tab-btn tab-btn-sec" onclick="switchMode('option')">模式 B：選擇權多頭價差</button>
-        </div>
-
-        <!-- 模式 A：微台期貨 -->
-        <div id="modeFutures" class="mode-content active">
-            <div class="input-row">
-                <div class="input-group">
-                    <label>預計進場點位</label>
-                    <input type="number" id="fEntry" value="40250">
-                </div>
-                <div class="input-group">
-                    <label>停損點位 (嚴格守支撐)</label>
-                    <input type="number" id="fStop" value="40200">
-                </div>
-            </div>
-            <div class="input-row">
-                <div class="input-group">
-                    <label>目標停利點位 (見好就收)</label>
-                    <input type="number" id="fTarget" value="40400">
-                </div>
-                <div class="input-group">
-                    <label>交易口數 (1點10元)</label>
-                    <input type="number" id="fLots" value="1" min="1">
-                </div>
-            </div>
-
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-label">預估最大虧損</div>
-                    <div class="metric-val" id="fMaxLoss" style="color: var(--red);">$500</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">預估最大收益</div>
-                    <div class="metric-val" id="fMaxGain" style="color: var(--green);">$1,500</div>
-                </div>
-            </div>
-            <div class="metric-card" style="margin-top: 12px;">
-                <div class="metric-label">計算後風報比 (Reward / Risk)</div>
-                <div class="metric-val" id="fRR">3.00 : 1</div>
-            </div>
-        </div>
-
-        <!-- 模式 B：選擇權價差單 -->
-        <div id="modeOption" class="mode-content">
-            <div class="input-row">
-                <div class="input-group">
-                    <label>履約價間距 (點)</label>
-                    <input type="number" id="oSpread" value="100">
-                </div>
-                <div class="input-group">
-                    <label>淨收權利金 (點)</label>
-                    <input type="number" id="oCredit" value="35">
-                </div>
-            </div>
-            <div class="input-group">
-                <label>交易口數 (1點50元)</label>
-                <input type="number" id="oLots" value="1" min="1">
-            </div>
-
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <div class="metric-label">最大收益 (收滿)</div>
-                    <div class="metric-val" id="oMaxGain" style="color: var(--green);">$1,750</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">最大虧損 (鎖死)</div>
-                    <div class="metric-val" id="oMaxLoss" style="color: var(--red);">$3,250</div>
-                </div>
-            </div>
-            <div class="metric-card" style="margin-top: 12px;">
-                <div class="metric-label">價差風報比</div>
-                <div class="metric-val" id="oRR">0.54 : 1</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    let dailyTrend = 'down';
-    let m5Trend = 'up';
-    let currentMode = 'futures';
-
-    function adjustPrice(val) {
-        let el = document.getElementById('currentPrice');
-        el.value = parseInt(el.value || 0) + val;
-        calculateRadar();
-    }
-
-    function adjustVwap(val) {
-        let el = document.getElementById('vwapPrice');
-        el.value = parseInt(el.value || 0) + val;
-        calculateRadar();
-    }
-
-    function syncVwapToRisk() {
-        let vwap = document.getElementById('vwapPrice').value;
-        document.getElementById('fEntry').value = vwap;
-        document.getElementById('fStop').value = parseInt(vwap) - 40;
-        calculateFutures();
-        alert('已成功將均價線帶入風控計算機！');
-    }
-
-    function setDailyTrend(trend) {
-        dailyTrend = trend;
-        document.querySelectorAll('#dailyTrendGroup .chip').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        calculateRadar();
-    }
-
-    function setM5Trend(trend) {
-        m5Trend = trend;
-        document.querySelectorAll('#m5TrendGroup .chip').forEach(c => c.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        calculateRadar();
-    }
-
-    function switchMode(mode) {
-        currentMode = mode;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        document.getElementById('modeFutures').classList.toggle('active', mode === 'futures');
-        document.getElementById('modeOption').classList.toggle('active', mode === 'option');
-    }
-
-    function calculateRadar() {
-        let price = parseFloat(document.getElementById('currentPrice').value) || 0;
-        let vwap = parseFloat(document.getElementById('vwapPrice').value) || 0;
-        let breakout = parseFloat(document.getElementById('breakoutPoint').value) || 0;
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-6">
         
-        let diff = price - vwap;
-        let breakoutDiff = price - breakout;
+        <!-- 標題區 -->
+        <header class="flex justify-between items-center border-b border-slate-700 pb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-amber-400">🎯 台指選擇權 OI 籌碼邊界雷達</h1>
+                <p class="text-sm text-slate-400">結算日防線管理與箱型多空監控 (手動填入模式)</p>
+            </div>
+            <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                系統就緒
+            </div>
+        </header>
 
-        document.getElementById('diffPoints').innerText = (diff >= 0 ? '+' : '') + diff.toFixed(0) + ' 點';
-        document.getElementById('breakoutDiff').innerText = (breakoutDiff >= 0 ? '+' : '') + breakoutDiff.toFixed(0) + ' 點';
+        <!-- 參數輸入面板 -->
+        <div class="card rounded-xl p-5 shadow-lg">
+            <h2 class="text-lg font-semibold mb-4 text-slate-200">📊 每日籌碼與指數輸入</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">目前大盤指數</label>
+                    <input type="number" id="current-price" value="40280" class="w-full p-2 rounded input-dark text-lg font-bold text-center">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">下檔最大 OI 支撐 (Floor)</label>
+                    <input type="number" id="floor-price" value="39500" class="w-full p-2 rounded input-dark text-lg font-bold text-center text-emerald-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">上檔最大 OI 壓力 (Ceiling)</label>
+                    <input type="number" id="ceiling-price" value="41500" class="w-full p-2 rounded input-dark text-lg font-bold text-center text-rose-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">全市場 P/C Ratio</label>
+                    <input type="number" step="0.01" id="pc-ratio" value="0.54" class="w-full p-2 rounded input-dark text-lg font-bold text-center text-amber-400">
+                </div>
+            </div>
+            <div class="mt-4 text-right">
+                <button onclick="updateRadar()" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg shadow transition">
+                    立即更新雷達運算
+                </button>
+            </div>
+        </div>
 
-        let box = document.getElementById('radarResult');
-        let title = document.getElementById('resTitle');
-        let desc = document.getElementById('resDesc');
+        <!-- 視覺化箱型跑道 -->
+        <div class="card rounded-xl p-5 shadow-lg">
+            <h2 class="text-lg font-semibold mb-3 text-slate-200">🛡️ 主力防禦箱型即時對齊</h2>
+            <div class="relative w-full bg-slate-900 h-14 rounded-lg my-6 flex items-center px-4 border border-slate-700">
+                <!-- 支撐與壓力標籤 -->
+                <div class="absolute left-4 text-xs font-bold text-emerald-400">支撐: <span id="disp-floor">39500</span></div>
+                <div class="absolute right-4 text-xs font-bold text-rose-400">壓力: <span id="disp-ceiling">41500</span></div>
+                
+                <!-- 進度條軌道 -->
+                <div class="w-full mx-24 bg-slate-800 h-3 rounded-full overflow-hidden relative">
+                    <div id="price-bar" class="bg-amber-400 h-full transition-all duration-500" style="width: 50%;"></div>
+                </div>
+                
+                <!-- 目前價格標記 -->
+                <div id="price-pointer" class="absolute top-2 transform -translate-x-1/2 bg-amber-500 text-slate-950 text-xs font-black px-2 py-0.5 rounded shadow" style="left: 50%;">
+                    現價: 40280
+                </div>
+            </div>
+            <div class="flex justify-between text-xs text-slate-400 px-2">
+                <span>距離下檔支撐: <span id="dist-floor" class="text-emerald-400 font-bold">+780 點</span></span>
+                <span>箱型寬度: <span class="text-slate-200 font-bold">2,000 點</span></span>
+                <span>距離上檔壓力: <span id="dist-ceiling" class="text-rose-400 font-bold">+1,220 點</span></span>
+            </div>
+        </div>
 
-        // 核心跨週期邏輯判斷
-        if (dailyTrend === 'up' && m5Trend === 'up') {
-            box.className = 'result-box status-green';
-            title.innerText = '🟢 綠燈：大格局多頭 ＋ 5分K強勢向上（主升段噴出）';
-            desc.innerText = '天時地利人和！日線與 5 分 K 方向一致，可安心執行多方微台或 Bull Call Spread，逢回支撐皆可積極偏多。';
-        } else if (dailyTrend === 'down' && m5Trend === 'up') {
-            box.className = 'result-box status-yellow';
-            title.innerText = '🟡 黃燈：日線向下（空方壓制） ＋ 5分K向上（搶短反彈）';
-            desc.innerText = '注意：目前屬於「大空格局中的短多反彈」，隨時可能撞上日線反壓。可做極短線短打或用選擇權價差，嚴禁抱過夜！';
-        } else if (dailyTrend === 'down' && m5Trend === 'down') {
-            box.className = 'result-box status-red';
-            title.innerText = '🔴 紅燈：雙週期皆向下（標準空方主場）';
-            desc.innerText = '大格局與短線同步走空，非妳的舒適主場！嚴禁做多，乖乖空手喝茶或觀望。';
-        } else {
-            box.className = 'result-box status-yellow';
-            title.innerText = '🟡 黃燈：盤整糾結期（等待多空表態）';
-            desc.innerText = '跨週期訊號較為分歧，盤面震盪洗盤機率高，建議縮手等待 5 分 K 突破前高再動作。';
+        <!-- 實戰操作建議面板 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 多空定調 -->
+            <div class="card rounded-xl p-5 shadow-lg flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">💡 籌碼多空綜合判讀</h3>
+                    <div id="market-bias" class="text-xl font-bold text-amber-300 mb-2">區間箱型震盪 (偏空控盤)</div>
+                    <p id="bias-desc" class="text-xs text-slate-300 leading-relaxed">
+                        P/C Ratio 低於 1，上方 Call OI 壓制力道強，日線格局偏空。主力將指數夾在 39500～41500 進行結算收租。
+                    </p>
+                </div>
+                <div class="mt-4 pt-3 border-t border-slate-700 text-xs text-slate-400">
+                    * 依據期交所最新未平倉量與 P/C 比連動計算
+                </div>
+            </div>
+
+            <!-- 執行策略提示 -->
+            <div class="card rounded-xl p-5 shadow-lg border-l-4 border-amber-500">
+                <h3 class="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-2">🚨 明日實戰應對劇本</h3>
+                <ul class="space-y-2 text-xs text-slate-300">
+                    <li><strong class="text-emerald-400">【箱底策略】</strong> 接近 <span id="strat-floor">39500</span> 止跌時，可考慮微台反轉多單或下方樂透買方。</li>
+                    <li><strong class="text-rose-400">【箱頂策略】</strong> 接近 <span id="strat-ceiling">41500</span> 遇壓時，可執行微台防守空單或上方樂透買方。</li>
+                    <li><strong class="text-amber-400">【中間無人區】</strong> 現價附近波動無方向，嚴禁胡亂追價，等待觸界再動手。</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function updateRadar() {
+            const current = parseFloat(document.getElementById('current-price').value);
+            const floor = parseFloat(document.getElementById('floor-price').value);
+            const ceiling = parseFloat(document.getElementById('ceiling-price').value);
+            const pcRatio = parseFloat(document.getElementById('pc-ratio').value);
+
+            // 更新顯示數值
+            document.getElementById('disp-floor').innerText = floor;
+            document.getElementById('disp-ceiling').innerText = ceiling;
+
+            // 計算距離
+            const distFloor = current - floor;
+            const distCeiling = ceiling - current;
+            document.getElementById('dist-floor').innerText = (distFloor >= 0 ? '+' : '') + distFloor + ' 點';
+            document.getElementById('dist-ceiling').innerText = (distCeiling >= 0 ? '+' : '') + distCeiling + ' 點';
+
+            // 計算視覺化進度條百分比 (以 Floor 為 0%, Ceiling 為 100%)
+            const totalSpan = ceiling - floor;
+            let percentage = ((current - floor) / totalSpan) * 100;
+            percentage = Math.max(0, Math.min(100, percentage)); // 夾在 0-100 之間
+
+            const priceBar = document.getElementById('price-bar');
+            const pricePointer = document.getElementById('price-pointer');
+            
+            priceBar.style.width = percentage + '%';
+            pricePointer.style.left = percentage + '%';
+            pricePointer.innerText = `現價: ${current}`;
+
+            // 更新策略文字
+            document.getElementById('strat-floor').innerText = floor;
+            document.getElementById('strat-ceiling').innerText = ceiling;
+
+            // 判讀多空偏向
+            const biasEl = document.getElementById('market-bias');
+            const descEl = document.getElementById('bias-desc');
+            if (pcRatio < 0.7) {
+                biasEl.innerText = "📉 賣方壓制型盤整 (上壓重)";
+                biasEl.className = "text-xl font-bold text-rose-400 mb-2";
+                descEl.innerText = `P/C Ratio 為 ${pcRatio}（偏低），顯示 Call 莊家勢力龐大。只要不帶量突破上方防線，大盤以區間偏空震盪看待。`;
+            } else if (pcRatio > 1.2) {
+                biasEl.innerText = "📈 買盤支撐型盤整 (下檔強)";
+                biasEl.className = "text-xl font-bold text-emerald-400 mb-2";
+                descEl.innerText = `P/C Ratio 為 ${pcRatio}（偏高），顯示 Put 端防守積極，下檔承接力道強勁。`;
+            } else {
+                biasEl.innerText = "⚖️ 多空拉鋸中性區間";
+                biasEl.className = "text-xl font-bold text-amber-300 mb-2";
+                descEl.innerText = `P/C Ratio 處於中性水準，盤面正進行箱型整理，等待邊界突破訊號。`;
+            }
         }
-    }
 
-    function calculateFutures() {
-        let entry = parseFloat(document.getElementById('fEntry').value) || 0;
-        let stop = parseFloat(document.getElementById('fStop').value) || 0;
-        let target = parseFloat(document.getElementById('fTarget').value) || 0;
-        let lots = parseInt(document.getElementById('fLots').value) || 1;
-
-        let riskPts = Math.abs(entry - stop);
-        let rewardPts = Math.abs(target - entry);
-
-        let maxLoss = riskPts * 10 * lots;
-        let maxGain = rewardPts * 10 * lots;
-        let rr = riskPts > 0 ? (rewardPts / riskPts).toFixed(2) : 0;
-
-        document.getElementById('fMaxLoss').innerText = '$' + maxLoss.toLocaleString();
-        document.getElementById('fMaxGain').innerText = '$' + maxGain.toLocaleString();
-        document.getElementById('fRR').innerText = rr + ' : 1';
-    }
-
-    function calculateOption() {
-        let spread = parseFloat(document.getElementById('oSpread').value) || 0;
-        let credit = parseFloat(document.getElementById('oCredit').value) || 0;
-        let lots = parseInt(document.getElementById('oLots').value) || 1;
-
-        let maxGain = credit * 50 * lots;
-        let maxLoss = (spread - credit) * 50 * lots;
-        let rr = maxLoss > 0 ? (maxGain / maxLoss).toFixed(2) : 0;
-
-        document.getElementById('oMaxGain').innerText = '$' + maxGain.toLocaleString();
-        document.getElementById('oMaxLoss').innerText = '$' + maxLoss.toLocaleString();
-        document.getElementById('oRR').innerText = rr + ' : 1';
-    }
-
-    document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('input', () => {
-            calculateRadar();
-            calculateFutures();
-            calculateOption();
-        });
-    });
-
-    calculateRadar();
-    calculateFutures();
-    calculateOption();
-</script>
-
+        // 初始化執行一次
+        updateRadar();
+    </script>
 </body>
 </html>
