@@ -38,26 +38,24 @@
         .btn-toggle { flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 4px; font-size: 12px; font-weight: 600; color: #64748b; cursor: pointer; text-align: center; }
         .btn-toggle.active { background: #0284c7; color: #ffffff; border-color: #0284c7; box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2); }
 
-        /* 警示盒共用與動態色系 */
+        /* 警示盒 */
         .alert-box { border-radius: 8px; padding: 10px; font-size: 11px; line-height: 1.4; margin-top: 10px; }
         .alert-amber { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
         .alert-amber strong { color: #b45309; display: block; font-size: 12px; margin-bottom: 2px; }
-        
         .alert-red { background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; }
         .alert-red strong { color: #e11d48; display: block; font-size: 12px; margin-bottom: 2px; }
-
         .alert-green { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
         .alert-green strong { color: #059669; display: block; font-size: 12px; margin-bottom: 2px; }
 
         /* 專屬 OI 籌碼區外框 */
         .oi-card { border-color: #bae6fd; background: linear-gradient(to bottom, #ffffff, #f0f9ff); }
         
-        /* 視覺化跑道改善（數字移到上方，避免覆蓋） */
-        .track-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 4px; padding: 0 2px; }
-        .track-container { position: relative; background: #e2e8f0; border-radius: 8px; height: 26px; display: flex; align-items: center; padding: 0 8px; margin-bottom: 8px; border: 1px solid #cbd5e1; }
+        /* 視覺化跑道完美防護 */
+        .track-header { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; margin-bottom: 6px; padding: 0 4px; }
+        .track-container { position: relative; background: #e2e8f0; border-radius: 8px; height: 32px; display: flex; align-items: center; padding: 0 8px; margin-bottom: 8px; border: 1px solid #cbd5e1; }
         .track-bg { position: absolute; left: 8px; right: 8px; height: 6px; background: #cbd5e1; border-radius: 3px; overflow: hidden; }
         .track-progress { height: 100%; background: #d97706; width: 50%; transition: width 0.3s ease; }
-        .track-pointer { position: absolute; transform: translateX(-50%); background: #0f172a; color: #ffffff; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px; top: 3px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.2); z-index: 5; }
+        .track-pointer { position: absolute; transform: translateX(-50%); background: #0f172a; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; top: 6px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.2); z-index: 5; }
 
         /* 資訊檢視欄 */
         .info-bar { display: flex; justify-content: space-between; font-size: 11px; color: #475569; background: rgba(255,255,255,0.7); padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
@@ -155,7 +153,7 @@
                 </div>
             </div>
 
-            <!-- 視覺化跑道（數字移至上方，徹底解決覆蓋問題） -->
+            <!-- 視覺化跑道（完美獨立 Header，絕不覆蓋） -->
             <div class="track-header">
                 <span style="color: #059669;">支撐: <span id="disp-floor">39500</span></span>
                 <span style="color: #dc2626;">壓力: <span id="disp-ceiling">41500</span></span>
@@ -186,26 +184,32 @@
                 <span class="sub">先算好最多賠多少</span>
             </div>
 
+            <!-- 操作方向切換開關 -->
+            <div class="toggle-row" style="margin-bottom: 8px;">
+                <button id="dir-short" onclick="setDirection('short')" class="btn-toggle active">📉 偏空操作 (目標在下方)</button>
+                <button id="dir-long" onclick="setDirection('long')" class="btn-toggle">📈 搶彈多單 (目標在上方)</button>
+            </div>
+
             <div class="toggle-row" style="margin-bottom: 12px;">
-                <button id="mode-micro" onclick="setMode('micro')" class="btn-toggle active">模式 A：微台期貨多單</button>
+                <button id="mode-micro" onclick="setMode('micro')" class="btn-toggle active">模式 A：微台期貨</button>
                 <button id="mode-spread" onclick="setMode('spread')" class="btn-toggle">模式 B：選擇權價差</button>
             </div>
 
             <div class="grid-2">
                 <div class="field">
                     <label id="lbl-entry">預計進場點位</label>
-                    <input type="number" id="entry-price" value="40028" oninput="calculateRisk()" class="input-box">
+                    <input type="number" id="entry-price" value="40039" oninput="calculateRisk()" class="input-box">
                 </div>
                 <div class="field">
-                    <label id="lbl-stop">停損點位 (嚴格守支撐)</label>
-                    <input type="number" id="stop-price" value="39988" oninput="calculateRisk()" class="input-box">
+                    <label id="lbl-stop">停損點位</label>
+                    <input type="number" id="stop-price" value="40079" oninput="calculateRisk()" class="input-box">
                 </div>
             </div>
 
             <div class="grid-2">
                 <div class="field">
                     <label id="lbl-target">目標停利點位</label>
-                    <input type="number" id="target-price" value="39600" oninput="calculateRisk()" class="input-box">
+                    <input type="number" id="target-price" value="39611" oninput="calculateRisk()" class="input-box">
                 </div>
                 <div class="field">
                     <label id="lbl-qty">交易口數 (1點10元)</label>
@@ -236,6 +240,7 @@
         let currentDailyTrend = 'down';
         let current5mTrend = 'down';
         let currentMode = 'micro';
+        let currentDirection = 'short'; // 'short' 或 'long'
 
         function setDailyTrend(trend) {
             currentDailyTrend = trend;
@@ -276,6 +281,24 @@
             }
         }
 
+        function setDirection(dir) {
+            currentDirection = dir;
+            document.getElementById('dir-short').className = dir === 'short' ? 'btn-toggle active' : 'btn-toggle';
+            document.getElementById('dir-long').className = dir === 'long' ? 'btn-toggle active' : 'btn-toggle';
+            
+            const vwap = parseFloat(document.getElementById('vwap-price').value) || 40028;
+            if (dir === 'short') {
+                document.getElementById('entry-price').value = vwap;
+                document.getElementById('stop-price').value = vwap + 40;
+                document.getElementById('target-price').value = vwap - 428;
+            } else {
+                document.getElementById('entry-price').value = vwap;
+                document.getElementById('stop-price').value = vwap - 40;
+                document.getElementById('target-price').value = vwap + 428;
+            }
+            calculateRisk();
+        }
+
         function adjustPrice(val) {
             const input = document.getElementById('market-price');
             input.value = parseFloat(input.value) + val;
@@ -289,11 +312,7 @@
         }
 
         function syncVwap() {
-            const vwap = document.getElementById('vwap-price').value;
-            document.getElementById('entry-price').value = vwap;
-            document.getElementById('stop-price').value = parseFloat(vwap) - 40;
-            document.getElementById('target-price').value = parseFloat(vwap) - 428;
-            calculateRisk();
+            setDirection(currentDirection);
         }
 
         function setMode(mode) {
@@ -346,7 +365,7 @@
             const qty = parseFloat(document.getElementById('trade-qty').value) || 1;
 
             const riskPoints = Math.abs(entry - stop);
-            const rewardPoints = Math.abs(target - entry);
+            const rewardPoints = Math.abs(entry - target);
 
             let loss = riskPoints * 10 * qty;
             let profit = rewardPoints * 10 * qty;
