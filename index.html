@@ -50,10 +50,10 @@
         /* 專屬 OI 籌碼區外框 */
         .oi-card { border-color: #bae6fd; background: linear-gradient(to bottom, #ffffff, #f0f9ff); }
         
-        /* 視覺化跑道（完美解決覆蓋，拿掉浮動現價標籤） */
-        .track-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px; padding: 0 4px; }
-        .track-container { position: relative; background: #e2e8f0; border-radius: 8px; height: 16px; display: flex; align-items: center; padding: 0 4px; margin-bottom: 8px; border: 1px solid #cbd5e1; overflow: hidden; }
-        .track-progress { height: 100%; background: #d97706; width: 50%; transition: width 0.3s ease; border-radius: 6px; }
+        /* 全新超清爽視覺跑道（絕對不遮蔽） */
+        .new-track-top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px; padding: 0 2px; }
+        .new-track-box { position: relative; background: #e2e8f0; border-radius: 8px; height: 16px; display: flex; align-items: center; padding: 0 2px; margin-bottom: 8px; border: 1px solid #cbd5e1; overflow: hidden; }
+        .new-track-fill { height: 100%; background: #d97706; width: 50%; transition: width 0.3s ease; border-radius: 6px; }
 
         /* 資訊檢視欄 */
         .info-bar { display: flex; justify-content: space-between; font-size: 11px; color: #475569; background: rgba(255,255,255,0.7); padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; }
@@ -74,7 +74,7 @@
         <!-- 頂部標題 -->
         <div class="app-header">
             <h1>多週期趨勢狙擊雷達 & 風報比</h1>
-            <p>AVON 專屬台指 / 選擇權跨週期過濾與防線管理</p>
+            <p>AVON 專屬台指 / 選擇權跨週期過濾與防線管理 (v3)</p>
         </div>
 
         <!-- 第一關：跨格局風控雷達 -->
@@ -87,20 +87,20 @@
             <div class="grid-2">
                 <div class="field">
                     <label>目前現價 (點)</label>
-                    <input type="number" id="market-price" value="40173" oninput="calculateAll()" class="input-box">
+                    <input type="number" id="x-price" value="40173" oninput="runAll()" class="input-box">
                     <div class="btn-row">
-                        <button onclick="adjustPrice(-50)" class="btn-mini">-50</button>
-                        <button onclick="adjustPrice(50)" class="btn-mini">+50</button>
-                        <button onclick="adjustPrice(100)" class="btn-mini">+100</button>
+                        <button onclick="plusPrice(-50)" class="btn-mini">-50</button>
+                        <button onclick="plusPrice(50)" class="btn-mini">+50</button>
+                        <button onclick="plusPrice(100)" class="btn-mini">+100</button>
                     </div>
                 </div>
                 <div class="field">
                     <label>當日均價線 VWAP (點)</label>
-                    <input type="number" id="vwap-price" value="40028" oninput="calculateAll()" class="input-box">
+                    <input type="number" id="x-vwap" value="40028" oninput="runAll()" class="input-box">
                     <div class="btn-row">
-                        <button onclick="adjustVwap(-20)" class="btn-mini">-20</button>
-                        <button onclick="adjustVwap(20)" class="btn-mini">+20</button>
-                        <button onclick="syncVwap()" class="btn-mini btn-action">帶入風控</button>
+                        <button onclick="plusVwap(-20)" class="btn-mini">-20</button>
+                        <button onclick="plusVwap(20)" class="btn-mini">+20</button>
+                        <button onclick="doSync()" class="btn-mini btn-action">帶入風控</button>
                     </div>
                 </div>
             </div>
@@ -108,17 +108,17 @@
             <div class="field">
                 <label>1. 日線大趨勢方向</label>
                 <div class="toggle-row">
-                    <button id="btn-daily-up" onclick="setDailyTrend('up')" class="btn-toggle">🟢 日線向上</button>
-                    <button id="btn-daily-down" onclick="setDailyTrend('down')" class="btn-toggle active">🔴 日線向下</button>
+                    <button id="b-d-up" onclick="setD('up')" class="btn-toggle">🟢 日線向上</button>
+                    <button id="b-d-down" onclick="setD('down')" class="btn-toggle active">🔴 日線向下</button>
                 </div>
             </div>
 
             <div class="field">
                 <label>2. 5分K小趨勢結構</label>
                 <div class="toggle-row">
-                    <button id="btn-5m-up" onclick="set5mTrend('up')" class="btn-toggle">↗ 5分K急拉</button>
-                    <button id="btn-5m-flat" onclick="set5mTrend('flat')" class="btn-toggle">— 盤整糾結</button>
-                    <button id="btn-5m-down" onclick="set5mTrend('down')" class="btn-toggle active">↘ 向下回測</button>
+                    <button id="b-5-up" onclick="set5('up')" class="btn-toggle">↗ 5分K急拉</button>
+                    <button id="b-5-flat" onclick="set5('flat')" class="btn-toggle">— 盤整糾結</button>
+                    <button id="b-5-down" onclick="set5('down')" class="btn-toggle active">↘ 向下回測</button>
                 </div>
             </div>
 
@@ -129,7 +129,7 @@
         </div>
 
 
-        <!-- ✨ 選擇權 OI 籌碼邊界監控 (取消現價標籤覆蓋，保證數字清爽) -->
+        <!-- ✨ 選擇權 OI 籌碼邊界監控 (全新超清爽跑道，絕不遮蔽) -->
         <div class="card oi-card">
             <div class="card-title" style="color: #0369a1; border-color: #bae6fd;">
                 <span>🎯 選擇權 OI 籌碼邊界監控</span>
@@ -139,35 +139,35 @@
             <div class="grid-3">
                 <div class="field">
                     <label style="color: #059669;">下檔最大OI支撐</label>
-                    <input type="number" id="oi-floor" value="39500" oninput="calculateOi()" class="input-box" style="color: #059669;">
+                    <input type="number" id="x-floor" value="39500" oninput="runAll()" class="input-box" style="color: #059669;">
                 </div>
                 <div class="field">
                     <label style="color: #dc2626;">上檔最大OI壓力</label>
-                    <input type="number" id="oi-ceiling" value="41500" oninput="calculateOi()" class="input-box" style="color: #dc2626;">
+                    <input type="number" id="x-ceiling" value="41500" oninput="runAll()" class="input-box" style="color: #dc2626;">
                 </div>
                 <div class="field">
                     <label style="color: #d97706;">全市場 P/C 比</label>
-                    <input type="number" step="0.01" id="oi-pc" value="0.54" oninput="calculateOi()" class="input-box" style="color: #d97706;">
+                    <input type="number" step="0.01" id="x-pc" value="0.54" oninput="runAll()" class="input-box" style="color: #d97706;">
                 </div>
             </div>
 
-            <!-- 視覺化跑道（獨立 Header，絕不重疊） -->
-            <div class="track-header">
-                <span style="color: #059669;">支撐: <span id="disp-floor">39500</span></span>
-                <span style="color: #dc2626;">壓力: <span id="disp-ceiling">41500</span></span>
+            <!-- 視覺化跑道 (完全拿掉浮動標籤，數字獨立在上方兩側) -->
+            <div class="new-track-top">
+                <span style="color: #059669;">支撐: <span id="v-floor">39500</span></span>
+                <span style="color: #dc2626;">壓力: <span id="v-ceiling">41500</span></span>
             </div>
-            <div class="track-container">
-                <div id="oi-bar" class="track-progress"></div>
+            <div class="new-track-box">
+                <div id="v-bar" class="new-track-fill"></div>
             </div>
 
             <div class="info-bar">
-                <span>距下檔支撐: <strong id="dist-floor" style="color: #059669;">+673 點</strong></span>
+                <span>距下檔支撐: <strong id="v-dist-f" style="color: #059669;">+673 點</strong></span>
                 <span>箱型寬度: <strong style="color: #0f172a;">2,000 點</strong></span>
-                <span>距上檔壓力: <strong id="dist-ceiling" style="color: #dc2626;">+1,327 點</strong></span>
+                <span>距上檔壓力: <strong id="v-dist-c" style="color: #dc2626;">+1,327 點</strong></span>
             </div>
 
-            <div id="oi-bias-text" class="oi-text">
-                📌 <strong>籌碼解讀：</strong> P/C Ratio 0.54 偏低，上檔 Call 壓重。結算前若無力突破 41500，指數將受限於 39500～41500 區間內震盪。
+            <div id="v-oi-text" class="oi-text">
+                📌 <strong>籌碼解讀：</strong> P/C Ratio 0.54 偏低，上檔 Call 壓重。主力防守箱型上限（41500），若無力突破則以區間震盪看待。
             </div>
         </div>
 
@@ -179,214 +179,191 @@
                 <span class="sub">先算好最多賠多少</span>
             </div>
 
-            <!-- 多空方向切換 -->
-            <div class="toggle-row" style="margin-bottom: 8px;">
-                <button id="dir-short" onclick="setDirection('short')" class="btn-toggle active">📉 偏空操作 (目標在下方)</button>
-                <button id="dir-long" onclick="setDirection('long')" class="btn-toggle">📈 搶彈多單 (目標在上方)</button>
-            </div>
-
             <!-- 模式選擇 (模式 A / 模式 B 選擇權價差) -->
             <div class="toggle-row" style="margin-bottom: 12px;">
-                <button id="mode-micro" onclick="setMode('micro')" class="btn-toggle active">模式 A：微台期貨</button>
-                <button id="mode-spread" onclick="setMode('spread')" class="btn-toggle">模式 B：選擇權價差</button>
+                <button id="btn-mode-a" onclick="setMode('micro')" class="btn-toggle active">模式 A：微台期貨</button>
+                <button id="btn-mode-b" onclick="setMode('spread')" class="btn-toggle">模式 B：選擇權價差</button>
             </div>
 
             <div class="grid-2">
                 <div class="field">
-                    <label id="lbl-entry">預計進場點位</label>
-                    <input type="number" id="entry-price" value="40028" oninput="calculateRisk()" class="input-box">
+                    <label>預計進場點位</label>
+                    <input type="number" id="x-entry" value="40028" oninput="runRisk()" class="input-box">
                 </div>
                 <div class="field">
-                    <label id="lbl-stop">停損點位</label>
-                    <input type="number" id="stop-price" value="40068" oninput="calculateRisk()" class="input-box">
+                    <label>停損點位</label>
+                    <input type="number" id="x-stop" value="40068" oninput="runRisk()" class="input-box">
                 </div>
             </div>
 
             <div class="grid-2">
                 <div class="field">
-                    <label id="lbl-target">目標停利點位</label>
-                    <input type="number" id="target-price" value="39600" oninput="calculateRisk()" class="input-box">
+                    <label>目標停利點位</label>
+                    <input type="number" id="x-target" value="39600" oninput="runRisk()" class="input-box">
                 </div>
                 <div class="field">
-                    <label id="lbl-qty">交易口數 (1點10元)</label>
-                    <input type="number" id="trade-qty" value="1" oninput="calculateRisk()" class="input-box">
+                    <label>交易口數 (1點10元)</label>
+                    <input type="number" id="x-qty" value="1" oninput="runRisk()" class="input-box">
                 </div>
             </div>
 
             <div class="risk-grid">
                 <div class="risk-box risk-loss">
-                    <div style="font-size: 10px; color: #e11d48; font-weight: 600;" id="loss-title">預估最大虧損</div>
-                    <div id="max-loss" style="font-size: 16px; font-weight: 900; color: #be123c; margin-top: 2px;">$400</div>
+                    <div style="font-size: 10px; color: #e11d48; font-weight: 600;" id="lbl-loss-title">預估最大虧損 (微台)</div>
+                    <div id="v-loss" style="font-size: 16px; font-weight: 900; color: #be123c; margin-top: 2px;">$400</div>
                 </div>
                 <div class="risk-box risk-profit">
-                    <div style="font-size: 10px; color: #059669; font-weight: 600;">預估最大收益</div>
-                    <div id="max-profit" style="font-size: 16px; font-weight: 900; color: #047857; margin-top: 2px;">$4,280</div>
+                    <div style="font-size: 10px; color: #059669; font-weight: 600;" id="lbl-profit-title">預估最大收益</div>
+                    <div id="v-profit" style="font-size: 16px; font-weight: 900; color: #047857; margin-top: 2px;">$4,280</div>
                 </div>
             </div>
 
             <div class="risk-ratio-box">
                 <div style="font-size: 10px; color: #94a3b8;">計算後風報比 (Reward / Risk)</div>
-                <div id="risk-ratio" style="font-size: 20px; font-weight: 900; color: #fbbf24; margin-top: 2px;">10.70 : 1</div>
+                <div id="v-ratio" style="font-size: 20px; font-weight: 900; color: #fbbf24; margin-top: 2px;">10.70 : 1</div>
             </div>
         </div>
 
     </div>
 
     <script>
-        let currentDailyTrend = 'down';
-        let current5mTrend = 'down';
-        let currentMode = 'micro'; // 'micro' 或 'spread'
-        let currentDirection = 'short'; // 'short' 或 'long'
+        let curD = 'down';
+        let cur5 = 'down';
+        let curMode = 'micro'; // 'micro' 或 'spread'
 
-        function setDailyTrend(trend) {
-            currentDailyTrend = trend;
-            document.getElementById('btn-daily-up').className = trend === 'up' ? 'btn-toggle active' : 'btn-toggle';
-            document.getElementById('btn-daily-down').className = trend === 'down' ? 'btn-toggle active' : 'btn-toggle';
-            updateAlert();
+        function setD(val) {
+            curD = val;
+            document.getElementById('b-d-up').className = val === 'up' ? 'btn-toggle active' : 'btn-toggle';
+            document.getElementById('b-d-down').className = val === 'down' ? 'btn-toggle active' : 'btn-toggle';
+            refreshAlert();
         }
 
-        function set5mTrend(trend) {
-            current5mTrend = trend;
+        function set5(val) {
+            cur5 = val;
             ['up', 'flat', 'down'].forEach(t => {
-                document.getElementById(`btn-5m-${t}`).className = t === trend ? 'btn-toggle active' : 'btn-toggle';
+                document.getElementById(`b-5-${t}`).className = t === val ? 'btn-toggle active' : 'btn-toggle';
             });
-            updateAlert();
+            refreshAlert();
         }
 
-        function updateAlert() {
-            const boxEl = document.getElementById('alert-box');
-            const titleEl = document.getElementById('alert-title');
-            const descEl = document.getElementById('alert-desc');
+        function refreshAlert() {
+            const box = document.getElementById('alert-box');
+            const title = document.getElementById('alert-title');
+            const desc = document.getElementById('alert-desc');
 
-            if (currentDailyTrend === 'down' && current5mTrend === 'down') {
-                boxEl.className = "alert-box alert-red";
-                titleEl.innerText = "🔴 紅燈：日線向下（空方壓制）＋ 5分K向下（順勢回測）";
-                descEl.innerText = "注意：長短線結構同步向下，屬於空方主導盤勢。可尋找反彈無力時順勢偏空，嚴禁逆勢接刀！";
-            } else if (currentDailyTrend === 'down' && current5mTrend === 'up') {
-                boxEl.className = "alert-box alert-amber";
-                titleEl.innerText = "🟡 黃燈：日線向下（空方壓制）＋ 5分K向上（搶短反彈）";
-                descEl.innerText = "注意：屬於大空格局中的短暫反彈，隨時可能撞上日線反壓，嚴禁抱過夜！";
-            } else if (currentDailyTrend === 'up' && current5mTrend === 'up') {
-                boxEl.className = "alert-box alert-green";
-                titleEl.innerText = "🟢 綠燈：日線向上 ＋ 5分K向上（雙多共振）";
-                descEl.innerText = "注意：多頭主場排列，拉回即是買點，可順勢偏多操作。";
+            if (curD === 'down' && cur5 === 'down') {
+                box.className = "alert-box alert-red";
+                title.innerText = "🔴 紅燈：日線向下（空方壓制）＋ 5分K向下（順勢回測）";
+                desc.innerText = "注意：長短線結構同步向下，屬於空方主導盤勢。可尋找反彈無力時順勢偏空，嚴禁逆勢接刀！";
+            } else if (curD === 'down' && cur5 === 'up') {
+                box.className = "alert-box alert-amber";
+                title.innerText = "🟡 黃燈：日線向下（空方壓制）＋ 5分K向上（搶短反彈）";
+                desc.innerText = "注意：屬於大空格局中的短暫反彈，隨時可能撞上日線反壓，嚴禁抱過夜！";
+            } else if (curD === 'up' && cur5 === 'up') {
+                box.className = "alert-box alert-green";
+                title.innerText = "🟢 綠燈：日線向上 ＋ 5分K向上（雙多共振）";
+                desc.innerText = "注意：多頭主場排列，拉回即是買點，可順勢偏多操作。";
             } else {
-                boxEl.className = "alert-box alert-amber";
-                titleEl.innerText = "⚖️ 盤整糾結：短線方向不明";
-                descEl.innerText = "注意：目前 5分K 處於盤整糾結，建議等待帶量突破邊界再行出手。";
+                box.className = "alert-box alert-amber";
+                title.innerText = "⚖️ 盤整糾結：短線方向不明";
+                desc.innerText = "注意：目前 5分K 處於盤整糾結，建議等待帶量突破邊界再行出手。";
             }
-        }
-
-        function setDirection(dir) {
-            currentDirection = dir;
-            document.getElementById('dir-short').className = dir === 'short' ? 'btn-toggle active' : 'btn-toggle';
-            document.getElementById('dir-long').className = dir === 'long' ? 'btn-toggle active' : 'btn-toggle';
-            
-            const vwap = parseFloat(document.getElementById('vwap-price').value) || 40028;
-            if (dir === 'short') {
-                document.getElementById('entry-price').value = vwap;
-                document.getElementById('stop-price').value = vwap + 40;
-                document.getElementById('target-price').value = vwap - 428;
-            } else {
-                document.getElementById('entry-price').value = vwap;
-                document.getElementById('stop-price').value = vwap - 40;
-                document.getElementById('target-price').value = vwap + 428;
-            }
-            calculateRisk();
         }
 
         function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('mode-micro').className = mode === 'micro' ? 'btn-toggle active' : 'btn-toggle';
-            document.getElementById('mode-spread').className = mode === 'spread' ? 'btn-toggle active' : 'btn-toggle';
-            calculateRisk();
+            curMode = mode;
+            document.getElementById('btn-mode-a').className = mode === 'micro' ? 'btn-toggle active' : 'btn-toggle';
+            document.getElementById('btn-mode-b').className = mode === 'spread' ? 'btn-toggle active' : 'btn-toggle';
+            runRisk();
         }
 
-        function adjustPrice(val) {
-            const input = document.getElementById('market-price');
-            input.value = parseFloat(input.value) + val;
-            calculateOi();
+        function plusPrice(val) {
+            const el = document.getElementById('x-price');
+            el.value = parseFloat(el.value) + val;
+            runAll();
         }
 
-        function adjustVwap(val) {
-            const input = document.getElementById('vwap-price');
-            input.value = parseFloat(input.value) + val;
-            setDirection(currentDirection);
+        function plusVwap(val) {
+            const el = document.getElementById('x-vwap');
+            el.value = parseFloat(el.value) + val;
+            runAll();
         }
 
-        function syncVwap() {
-            setDirection(currentDirection);
+        function doSync() {
+            const vwap = parseFloat(document.getElementById('x-vwap').value) || 40028;
+            document.getElementById('x-entry').value = vwap;
+            document.getElementById('x-stop').value = vwap + 40;
+            document.getElementById('x-target').value = vwap - 428;
+            runRisk();
         }
 
-        function calculateAll() {
-            calculateOi();
-        }
+        function runAll() {
+            const price = parseFloat(document.getElementById('x-price').value) || 0;
+            const floor = parseFloat(document.getElementById('x-floor').value) || 0;
+            const ceiling = parseFloat(document.getElementById('x-ceiling').value) || 0;
+            const pc = parseFloat(document.getElementById('x-pc').value) || 0;
 
-        function calculateOi() {
-            const market = parseFloat(document.getElementById('market-price').value) || 0;
-            const floor = parseFloat(document.getElementById('oi-floor').value) || 0;
-            const ceiling = parseFloat(document.getElementById('oi-ceiling').value) || 0;
-            const pc = parseFloat(document.getElementById('oi-pc').value) || 0;
+            document.getElementById('v-floor').innerText = floor;
+            document.getElementById('v-ceiling').innerText = ceiling;
 
-            document.getElementById('disp-floor').innerText = floor;
-            document.getElementById('disp-ceiling').innerText = ceiling;
-
-            const distF = market - floor;
-            const distC = ceiling - market;
-            document.getElementById('dist-floor').innerText = (distF >= 0 ? '+' : '') + distF + ' 點';
-            document.getElementById('dist-ceiling').innerText = (distC >= 0 ? '+' : '') + distC + ' 點';
+            const df = price - floor;
+            const dc = ceiling - price;
+            document.getElementById('v-dist-f').innerText = (df >= 0 ? '+' : '') + df + ' 點';
+            document.getElementById('v-dist-c').innerText = (dc >= 0 ? '+' : '') + dc + ' 點';
 
             const span = ceiling - floor;
-            let pct = span === 0 ? 50 : ((market - floor) / span) * 100;
+            let pct = span === 0 ? 50 : ((price - floor) / span) * 100;
             pct = Math.max(2, Math.min(98, pct));
 
-            // 只更新進度條長度，完全拿掉會覆蓋文字的浮動現價標籤
-            document.getElementById('oi-bar').style.width = pct + '%';
+            // 更新純進度條長度，完全沒有文字遮蔽
+            document.getElementById('v-bar').style.width = pct + '%';
 
-            const textEl = document.getElementById('oi-bias-text');
+            const txt = document.getElementById('v-oi-text');
             if (pc < 0.7) {
-                textEl.innerHTML = `📌 <strong>籌碼解讀：</strong> P/C Ratio ${pc} 偏低，上檔 Call 壓重。主力防守箱型上限（${ceiling}），若無力突破則以區間震盪看待。`;
+                txt.innerHTML = `📌 <strong>籌碼解讀：</strong> P/C Ratio ${pc} 偏低，上檔 Call 壓重。主力防守箱型上限（${ceiling}），若無力突破則以區間震盪看待。`;
             } else if (pc > 1.2) {
-                textEl.innerHTML = `📌 <strong>籌碼解讀：</strong> P/C Ratio ${pc} 偏高，下檔 Put 支撐強勁（${floor}）。下檔承接力道較強。`;
+                txt.innerHTML = `📌 <strong>籌碼解讀：</strong> P/C Ratio ${pc} 偏高，下檔 Put 支撐強勁（${floor}）。下檔承接力道較強。`;
             } else {
-                textEl.innerHTML = `📌 <strong>籌碼解讀：</strong> P/C Ratio 處於中性區間，盤面維持在 ${floor} 與 ${ceiling} 之間進行結算箱型整理。`;
+                txt.innerHTML = `📌 <strong>籌碼解讀：</strong> P/C Ratio 處於中性區間，盤面維持在 ${floor} 與 ${ceiling} 之間進行結算箱型整理。`;
             }
         }
 
-        function calculateRisk() {
-            const entry = parseFloat(document.getElementById('entry-price').value) || 0;
-            const stop = parseFloat(document.getElementById('stop-price').value) || 0;
-            const target = parseFloat(document.getElementById('target-price').value) || 0;
-            const qty = parseFloat(document.getElementById('trade-qty').value) || 1;
+        function runRisk() {
+            const entry = parseFloat(document.getElementById('x-entry').value) || 0;
+            const stop = parseFloat(document.getElementById('x-stop').value) || 0;
+            const target = parseFloat(document.getElementById('x-target').value) || 0;
+            const qty = parseFloat(document.getElementById('x-qty').value) || 1;
 
-            const riskPoints = Math.abs(entry - stop);
-            const rewardPoints = Math.abs(entry - target);
+            const riskPts = Math.abs(entry - stop);
+            const rewardPts = Math.abs(entry - target);
 
-            let loss, profit;
+            let lossVal, profitVal;
 
-            if (currentMode === 'micro') {
+            if (curMode === 'micro') {
                 // 模式 A：微台期貨 (1點 = 10元)
-                loss = riskPoints * 10 * qty;
-                profit = rewardPoints * 10 * qty;
-                document.getElementById('loss-title').innerText = "預估最大虧損 (微台)";
+                lossVal = riskPts * 10 * qty;
+                profitVal = rewardPts * 10 * qty;
+                document.getElementById('lbl-loss-title').innerText = "預估最大虧損 (微台期貨)";
+                document.getElementById('lbl-profit-title').innerText = "預估最大收益";
             } else {
-                // 模式 B：選擇權價差 (假設合約口數點數價值減半或採價差結構，1點 = 5元且風險鎖死)
-                loss = riskPoints * 5 * qty;
-                profit = rewardPoints * 5 * qty;
-                document.getElementById('loss-title').innerText = "預估最大虧損 (選擇權價差)";
+                // 模式 B：選擇權價差 (風險與利潤按價差結構對應計算，以口數與點數差精準呈現)
+                lossVal = riskPts * 5 * qty; 
+                profitVal = rewardPts * 5 * qty;
+                document.getElementById('lbl-loss-title').innerText = "預估最大虧損 (選擇權價差)";
+                document.getElementById('lbl-profit-title').innerText = "預估最大收益 (選擇權價差)";
             }
 
-            document.getElementById('max-loss').innerText = '$' + loss.toLocaleString();
-            document.getElementById('max-profit').innerText = '$' + profit.toLocaleString();
+            document.getElementById('v-loss').innerText = '$' + lossVal.toLocaleString();
+            document.getElementById('v-profit').innerText = '$' + profitVal.toLocaleString();
 
-            const ratio = riskPoints === 0 ? 0 : (rewardPoints / riskPoints).toFixed(2);
-            document.getElementById('risk-ratio').innerText = ratio + ' : 1';
+            const ratio = riskPts === 0 ? 0 : (rewardPts / riskPts).toFixed(2);
+            document.getElementById('v-ratio').innerText = ratio + ' : 1';
         }
 
         // 初始化執行
-        updateAlert();
-        calculateOi();
-        calculateRisk();
+        refreshAlert();
+        runAll();
+        runRisk();
     </script>
 </body>
 </html>
